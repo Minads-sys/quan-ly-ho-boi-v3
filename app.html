@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="app.css">
+    <!-- (MỚI) Thư viện SheetJS (xlsx.js) cho Import/Export Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     <div id="global-loader" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]">
@@ -355,11 +357,44 @@
                         <p class="text-center text-gray-500">Vui lòng chọn loại báo cáo và thời gian, sau đó nhấn "Xem Báo Cáo".</p>
                     </div>
                 </div>
-
-
+<!-- =================================== -->
+                <!-- (MỚI) Nội dung Tab 5: Import (Step 5a) -->
+                <!-- =================================== -->
                 <div id="content-import" class="tab-panel">
-                    <h2 class="text-2xl font-semibold mb-6">Import Dữ liệu</h2>
-                    <p>Nội dung cho Tab Import (Step 5)</p>
+                    <h2 class="text-2xl font-semibold mb-6">Import Dữ liệu Học viên (Excel)</h2>
+                    
+                    <div class="max-w-xl space-y-6">
+                        <!-- Step 1: Upload -->
+                        <div>
+                            <label for="import-file-input" class="block text-sm font-medium text-gray-700">Chọn file (.xlsx, .xls)</label>
+                            <input type="file" id="import-file-input" 
+                                   accept=".xlsx, .xls"
+                                   class="mt-1 block w-full text-sm text-gray-500
+                                          file:mr-4 file:py-2 file:px-4
+                                          file:rounded-lg file:border-0
+                                          file:text-sm file:font-semibold
+                                          file:bg-indigo-50 file:text-indigo-700
+                                          hover:file:bg-indigo-100">
+                            <p class="mt-2 text-xs text-gray-600">
+                                **Lưu ý:** File phải có 6 cột theo thứ tự: 
+                                <strong class="font-medium">Tên Học Viên, Số Điện Thoại, Tên Gói Học, Học phí, Tên HLV, Ca Dạy</strong>.
+                            </p>
+                        </div>
+
+                        <!-- Step 2: Button -->
+                        <button id="import-start-btn" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                            <span id="import-spinner" class="loader-sm hidden"></span>
+                            Tiến hành Import
+                        </button>
+
+                        <!-- Step 3: Results Log -->
+                        <div id="import-results-container" class="hidden">
+                            <h3 class="text-lg font-medium text-gray-900">Kết quả Import</h3>
+                            <div id="import-log" class="mt-2 p-4 bg-gray-900 text-white text-sm font-mono rounded-lg overflow-x-auto h-60">
+                                <p>Đang chờ xử lý...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="content-cai-dat" class="tab-panel">
@@ -579,3 +614,4 @@
     
 </body>
 </html>
+
