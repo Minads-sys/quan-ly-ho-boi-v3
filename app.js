@@ -947,7 +947,7 @@ const handlePrintPhieu = () => {
     
     const hv = lastRegisteredHocVien;
     
-    // Tạo nội dung HTML cho phiếu in
+    // (MỚI) Thêm Mã HV, Số Phiếu Thu, và 3 cột Chữ ký
     const printContent = `
         <div id="print-header">
             <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
@@ -956,12 +956,28 @@ const handlePrintPhieu = () => {
         <h2 id="print-title">PHIẾU GHI DANH HỌC BƠI</h2>
         <div id="print-details">
             <p><strong>Ngày ghi danh:</strong> ${formatDateForDisplay(hv.ngayGhiDanh)}</p>
+            <p><strong>Mã HV:</strong> ${hv.id.substring(0, 10).toUpperCase()}</p>
+            <p><strong>Số phiếu thu:</strong> ${hv.soPhieuThu || 'N/A'}</p>
             <p><strong>Họ tên học viên:</strong> ${hv.tenHV}</p>
             <p><strong>Số điện thoại:</strong> ${hv.sdtHV}</p>
             <p><strong>Gói học:</strong> ${hv.tenGoiHoc} (${hv.soBuoi} buổi)</p>
             <p><strong>HLV phụ trách:</strong> ${hv.tenHLV}</p>
             <p><strong>Học phí:</strong> ${formatCurrency(hv.hocPhi)} VNĐ</p>
             <p><strong>Ngày hết hạn:</strong> ${formatDateForDisplay(hv.ngayHetHan)}</p>
+        </div>
+        <div id="print-signatures">
+            <div class="signature-box">
+                <p><strong>Học viên</strong></p>
+                <p>(Ký, họ tên)</p>
+            </div>
+            <div class="signature-box">
+                <p><strong>HLV phụ trách</strong></p>
+                <p>(Ký, họ tên)</p>
+            </div>
+            <div class="signature-box">
+                <p><strong>Người lập phiếu</strong></p>
+                <p>(Ký, họ tên)</p>
+            </div>
         </div>
     `;
     
@@ -1047,7 +1063,7 @@ filterBtnThangNay.addEventListener('click', () => {
     currentHVFilter = 'thangnay';
     // Active 'Tháng Này'
     filterBtnThangNay.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-    filterBtnThangNay.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+    filterBtnThangNay.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-7Boolean');
     // Inactive 'Tất Cả'
     filterBtnTatCa.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
     filterBtnTatCa.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
