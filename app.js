@@ -1678,3 +1678,153 @@ const handleExportExcel = () => {
     }
 };
 reportExcelBtn.addEventListener('click', handleExportExcel);
+
+
+// --- (MỚI) BƯỚC 5c: IMPORT DỮ LIỆU ---
+const handleImportStart = () => {
+    const file = importFileInput.files[0];
+    if (!file) {
+        showModal("Vui lòng chọn một file Excel để import.", "Lỗi");
+        return;
+    }
+    
+    importStartBtn.disabled = true;
+    importSpinner.classList.remove('hidden');
+    importResultsContainer.classList.remove('hidden');
+    importLog.innerHTML = '<p>Bắt đầu đọc file...</p>';
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = e.target.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            // Chuyển sang mảng, dùng header: 1 để lấy mảng của các mảng
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if (rows.length < 2) {
+                throw new Error("File không có dữ liệu (chỉ có hàng tiêu đề).");
+            }
+
+            const headers = rows[0].map(h => String(h).trim());
+            const expectedHeaders = ["Tên Học Viên", "Số Điện Thoại", "Tên Gói Học", "Học phí", "Tên HLV", "Ca Dạy"];
+            
+            // 1. Kiểm tra tiêu đề nghiêm ngặt
+            if (headers.length < 6 ||
+                headers[0] !== expectedHeaders[0] ||
+                headers[1] !== expectedHeaders[1] ||
+                headers[2] !== expectedHeaders[2] ||
+                headers[3] !== expectedHeaders[3] ||
+                headers[4] !== expectedHeaders[4] ||
+                headers[5] !== expectedHeaders[5]) {
+                throw new Error(`Cấu trúc cột không hợp lệ. Phải là: ${expectedHeaders.join(', ')}`);
+            }
+
+            importLog.innerHTML += '<p>Đã đọc file. Bắt đầu xác thực dữ liệu...</p>';
+            
+            let successCount = 0;
+            let errorCount = 0;
+            const logMessages = [];
+            const batch = writeBatch(db);
+            const today = new Date(); // Ngày ghi danh cho tất cả HV import
+            const rateHBA = globalRateHBA / 100;
+            const rateTax = globalRateTax / 100;
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const rowNum = i + 1; // Số dòng trên Excel
+                
+                const tenHV = row[0] ? String(row[0]).trim() : '';
+                const sdtHV = row[1] ? String(row[1]).trim() : '';
+                const tenGoiHoc = row[2] ? String(row[2]).trim() : '';
+                const hocPhi = parseInt(row[3]) || 0;
+                const tenHLV = row[4] ? String(row[4]).trim() : '';
+                const caDay = row[5] ? String(row[5]).trim() : '';
+
+                // 2. Kiểm tra dữ liệu
+                if (!tenHV || !tenGoiHoc || !tenHLV || !caDay || hocPhi === 0) {
+                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Thiếu Tên, Gói Học, HLV, Ca Dạy hoặc Học Phí. Bỏ qua.</p>`);
+                    errorCount++;
+                    continue;
+                }
+
+                // 3. Kiểm tra Gói Học (KHỚP 100%)
+                const goiHoc = globalGoiHocList.find(g => g.tenGoi === tenGoiHoc);
+                if (!goiHoc) {
+                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Tên Gói Học "${tenGoiHoc}" không tìm thấy trong CSDL. Bỏ qua.</p>`);
+                    errorCount++;
+                    continue;
+                }
+                
+                // 4. Kiểm tra HLV & Ca Dạy (KHỚP 100%)
+                const hlv = globalHLVList.find(h => h.tenHLV === tenHLV && h.caDay === caDay);
+                if (!hlv) {
+                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Không tìm thấy HLV "${tenHLV}" dạy "${caDay}". Bỏ qua.</p>`);
+                    errorCount++;
+                    continue;
+                }
+
+                // 5. Nếu tất cả đều OK -> Tính toán và thêm vào Batch
+                const ngayHetHan = new Date(today);
+                ngayHetHan.setDate(today.getDate() + goiHoc.thoiHan);
+
+                const hbaNhan = hocPhi * rateHBA;
+                const tongHoaHong = hocPhi - hbaNhan;
+                const thue = tongHoaHong * rateTax;
+                const hlvThucNhan = tongHoaHong - thue;
+
+                const hocVienData = {
+                    tenHV, sdtHV, 
+                    nhomTuoi: 'N/A', // Import không có nhóm tuổi
+                    caHoc: caDay,
+                    maThe: '',
+                    soPhieuThu: `Import ${formatDateForDisplay(today)}`,
+                    goiHocId: goiHoc.id,
+                    tenGoiHoc: goiHoc.tenGoi,
+                    soBuoi: goiHoc.soBuoi,
+                    hocPhi: hocPhi,
+                    hlvId: hlv.id,
+                    tenHLV: hlv.tenHLV,
+                    ngayGhiDanh: Timestamp.fromDate(today),
+                    ngayHetHan: Timestamp.fromDate(ngayHetHan),
+                    thoiHan: goiHoc.thoiHan,
+                    hbaNhan, tongHoaHong, thue, hlvThucNhan,
+                    nguoiGhiDanhId: currentUser.uid,
+                    nguoiGhiDanhEmail: currentUser.email,
+                };
+                
+                const newDocRef = doc(collection(db, "hocvien"));
+                batch.set(newDocRef, hocVienData);
+                successCount++;
+            }
+            
+            importLog.innerHTML += `<p>Đã xác thực ${rows.length - 1} dòng. Đang lưu vào CSDL...</p>`;
+            
+            // 6. Ghi Batch
+            if (successCount > 0) {
+                await batch.commit();
+            }
+
+            // 7. Hoàn tất
+            importLog.innerHTML += `<p class="text-green-400 font-bold">--- IMPORT HOÀN TẤT ---</p>`;
+            importLog.innerHTML += `<p class="text-green-400">Thành công: ${successCount} / ${rows.length - 1}</p>`;
+            importLog.innerHTML += `<p class="text-red-400">Thất bại: ${errorCount} / ${rows.length - 1}</p>`;
+            importLog.innerHTML += `<p>--- Chi tiết lỗi ---</p>`;
+            importLog.innerHTML += logMessages.join('');
+
+        } catch (error) {
+            console.error("Lỗi khi import:", error);
+            importLog.innerHTML += `<p class="text-red-400 font-bold">ĐÃ XẢY RA LỖI NGHIÊM TRỌNG:</p>`;
+            importLog.innerHTML += `<p class="text-red-400">${error.message}</p>`;
+            showModal(`Lỗi khi xử lý file: ${error.message}`, "Lỗi Import");
+        } finally {
+            importStartBtn.disabled = false;
+            importSpinner.classList.add('hidden');
+            importFileInput.value = ""; // Xoá file đã chọn
+        }
+    };
+    reader.readAsBinaryString(file);
+};
+importStartBtn.addEventListener('click', handleImportStart);
