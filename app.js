@@ -1195,7 +1195,7 @@ const updateQuickReport = () => {
 };
 
 
-// --- (MỚI) BƯỚC 4b: TAB BÁO CÁO ADMIN ---
+// --- (MỚI) BƯỚC 4b/c: TAB BÁO CÁO ADMIN ---
 
 // Hàm lấy khoảng ngày dựa trên filter
 const getReportDateRange = (filterType) => {
@@ -1328,6 +1328,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- Thẻ thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
@@ -1343,6 +1344,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             </div>
         </div>
         
+        <!-- Bảng chi tiết Tổng quan -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1416,6 +1418,7 @@ const renderHLVReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- Bảng chi tiết Thu nhập HLV -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1445,3 +1448,129 @@ const renderHLVReport = (data, startDate, endDate) => {
     
     reportResultsContainer.innerHTML = html;
 };
+
+// --- (MỚI) BƯỚC 4d: IN BÁO CÁO ---
+
+// Hàm tạo HTML cho Báo cáo Tổng quan (bản in)
+const generateTongQuanPrintHTML = (data) => {
+    let totalRevenue = 0;
+    let totalHbaNhan = 0;
+    let totalHlvGross = 0;
+    let totalThue = 0;
+    let totalHlvNet = 0;
+    
+    data.forEach(hv => {
+        totalRevenue += hv.hocPhi;
+        totalHbaNhan += hv.hbaNhan;
+        totalHlvGross += hv.tongHoaHong;
+        totalThue += hv.thue;
+        totalHlvNet += hv.hlvThucNhan;
+    });
+
+    return `
+        <h3 style="font-size: 16pt; font-weight: bold; margin-bottom: 10px;">Chi tiết Báo cáo Tổng quan</h3>
+        <p style="font-size: 12pt; margin-bottom: 5px;"><strong>Tổng Doanh Thu:</strong> ${formatCurrency(totalRevenue)} VNĐ</p>
+        <p style="font-size: 12pt; margin-bottom: 5px;"><strong>Tổng HV Mới:</strong> ${data.length}</p>
+        <p style="font-size: 12pt; margin-bottom: 20px;"><strong>Tổng HLV Thực Nhận:</strong> ${formatCurrency(totalHlvNet)} VNĐ</p>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 12pt;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Chỉ số</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Số tiền (VNĐ)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">Tổng Doanh Thu</td><td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${formatCurrency(totalRevenue)}</td></tr>
+                <tr><td style="border: 1px solid #ddd; padding: 8px;">HBA Nhận (${globalRateHBA}%)</td><td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(totalHbaNhan)}</td></tr>
+                <tr><td style="border: 1px solid #ddd; padding: 8px;">Tổng Hoa Hồng HLV (Gross)</td><td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(totalHlvGross)}</td></tr>
+                <tr><td style="border: 1px solid #ddd; padding: 8px;">Tổng Thuế TNCN (${globalRateTax}%)</td><td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(totalThue)}</td></tr>
+                <tr><td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">Tổng HLV Thực Nhận (Net)</td><td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${formatCurrency(totalHlvNet)}</td></tr>
+            </tbody>
+        </table>
+    `;
+};
+
+// Hàm tạo HTML cho Báo cáo HLV (bản in)
+const generateHLVReportPrintHTML = (data) => {
+    const reportByHLV = {};
+    data.forEach(hv => {
+        const hlvId = hv.hlvId;
+        if (!hlvId) return;
+        if (!reportByHLV[hlvId]) {
+            reportByHLV[hlvId] = {
+                tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0
+            };
+        }
+        reportByHLV[hlvId].soHVMoi++;
+        reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+        reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
+    });
+    
+    const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
+
+    return `
+        <table style="width: 100%; border-collapse: collapse; font-size: 12pt;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tên HLV</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Số HV Mới</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tổng Doanh Thu Mang Về</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tổng Thực Nhận (Sau Thuế)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${reportArray.map(hlv => `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${hlv.tenHLV}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHVMoi}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${formatCurrency(hlv.tongThucNhan)} VNĐ</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+};
+
+// Hàm xử lý In Báo cáo
+const handlePrintReport = () => {
+    if (currentReportData.length === 0) {
+        showModal("Không có dữ liệu để in.", "Lỗi");
+        return;
+    }
+
+    const { startDate, endDate } = currentReportParams;
+    let title = "";
+    let tableHTML = "";
+
+    if (currentReportType === 'tongquan') {
+        title = "BÁO CÁO TỔNG QUAN";
+        tableHTML = generateTongQuanPrintHTML(currentReportData);
+    } else if (currentReportType === 'hlv') {
+        title = "BÁO CÁO THU NHẬP HUẤN LUYỆN VIÊN";
+        tableHTML = generateHLVReportPrintHTML(currentReportData);
+    }
+
+    const dateRangeHTML = `
+        <p style="font-size: 12pt; margin-bottom: 20px; text-align: center;">
+            Từ ngày: ${formatDateForDisplay(startDate)} - Đến ngày: ${formatDateForDisplay(endDate)}
+        </p>
+    `;
+
+    const printContent = `
+        <div id="print-header">
+            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
+            <h5>Hồ bơi HBA Phú Lâm</h5>
+        </div>
+        <h2 id="print-title">${title}</h2>
+        ${dateRangeHTML}
+        ${tableHTML}
+    `;
+
+    printSection.innerHTML = printContent;
+    document.body.classList.add('printing');
+    window.print();
+    document.body.classList.remove('printing');
+};
+reportPrintBtn.addEventListener('click', handlePrintReport);
