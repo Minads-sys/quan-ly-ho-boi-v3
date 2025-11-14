@@ -163,6 +163,24 @@ const qrHvNgay = document.getElementById('qr-hv-ngay');
 const qrHvTuan = document.getElementById('qr-hv-tuan');
 const qrHvTableBody = document.getElementById('qr-hv-table-body');
 
+// (MỚI) Elements cho Tab Báo Cáo (Step 4b)
+const reportTypeSelect = document.getElementById('report-type');
+const reportQuickFilterBtns = document.querySelectorAll('.report-quick-filter-btn');
+const reportFilterToday = document.getElementById('report-filter-today');
+const reportFilterThisMonth = document.getElementById('report-filter-this-month');
+const reportFilterLastMonth = document.getElementById('report-filter-last-month');
+const reportViewBtn = document.getElementById('report-view-btn');
+const reportSpinner = document.getElementById('report-spinner');
+const reportStartDateInput = document.getElementById('report-start-date');
+const reportEndDateInput = document.getElementById('report-end-date');
+const reportDateRangeContainer = document.getElementById('report-date-range');
+const reportPrintBtn = document.getElementById('report-print-btn');
+const reportExcelBtn = document.getElementById('report-excel-btn');
+const reportResultsContainer = document.getElementById('report-results-container');
+let currentReportData = []; // Lưu dữ liệu báo cáo để In/Xuất
+let currentReportType = 'tongquan';
+let currentReportParams = {};
+
 
 // --- HÀM UTILITY (Chung) ---
 
@@ -340,6 +358,9 @@ const loadAllInitialData = async () => {
 
     // Setup các tab sau khi có dữ liệu
     setupGhiDanhTab(); // (Step 3a)
+    
+    // (MỚI) Step 4b: Cài đặt ngày mặc định cho Tab Báo cáo
+    setupReportTabDefaults();
 };
 
 // Xử lý Đăng nhập
@@ -1171,4 +1192,192 @@ const updateQuickReport = () => {
     } else {
         qrHvTableBody.innerHTML = danhSachHVHomNayHTML;
     }
+};
+
+
+// --- (MỚI) BƯỚC 4b: TAB BÁO CÁO ADMIN ---
+
+// Hàm lấy khoảng ngày dựa trên filter
+const getReportDateRange = (filterType) => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    // Set endDate về cuối ngày
+    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+    if (filterType === 'today') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (filterType === 'this-month') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (filterType === 'last-month') {
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); // Ngày cuối của tháng trước
+    } else {
+        // 'custom'
+        startDate = new Date(reportStartDateInput.value);
+        endDate = new Date(reportEndDateInput.value);
+        endDate.setHours(23, 59, 59); // Đảm bảo bao trọn ngày cuối
+    }
+    return { startDate, endDate };
+};
+
+// Cài đặt mặc định và xử lý click cho Lọc Nhanh Báo Cáo
+const setupReportTabDefaults = () => {
+    const { startDate, endDate } = getReportDateRange('this-month');
+    reportStartDateInput.value = formatDateForInput(startDate);
+    reportEndDateInput.value = formatDateForInput(endDate);
+};
+
+reportQuickFilterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        // Bỏ active tất cả
+        reportQuickFilterBtns.forEach(b => {
+            b.classList.remove('bg-indigo-600', 'text-white');
+            b.classList.add('bg-white', 'text-gray-700');
+        });
+        
+        // Active nút được click
+        const targetBtn = e.currentTarget;
+        targetBtn.classList.add('bg-indigo-600', 'text-white');
+        targetBtn.classList.remove('bg-white', 'text-gray-700');
+        
+        const filterType = targetBtn.id.replace('report-filter-', '');
+        
+        if (filterType === 'custom') {
+            reportDateRangeContainer.classList.remove('hidden');
+        } else {
+            reportDateRangeContainer.classList.add('hidden');
+            const { startDate, endDate } = getReportDateRange(filterType);
+            reportStartDateInput.value = formatDateForInput(startDate);
+            reportEndDateInput.value = formatDateForInput(endDate);
+        }
+    });
+});
+// (Chúng ta có thể thêm logic cho "Lọc tùy chỉnh" sau)
+
+// Hàm chính: Xử lý nút "Xem Báo Cáo"
+const generateReport = () => {
+    reportSpinner.classList.remove('hidden');
+    reportViewBtn.disabled = true;
+    reportPrintBtn.disabled = true;
+    reportExcelBtn.disabled = true;
+    
+    try {
+        const reportType = reportTypeSelect.value;
+        const startDate = new Date(reportStartDateInput.value);
+        const endDate = new Date(reportEndDateInput.value);
+        endDate.setHours(23, 59, 59); // Đảm bảo bao trọn ngày
+
+        if (isNaN(startDate) || isNaN(endDate)) {
+            throw new Error("Ngày bắt đầu hoặc ngày kết thúc không hợp lệ.");
+        }
+        
+        // Lọc danh sách học viên theo ngày
+        const filteredData = globalHocVienList.filter(hv => {
+            const ngayGhiDanh = hv.ngayGhiDanh.toDate();
+            return ngayGhiDanh >= startDate && ngayGhiDanh <= endDate;
+        });
+
+        // Lưu lại để In/Xuất
+        currentReportData = filteredData;
+        currentReportType = reportType;
+        currentReportParams = { startDate, endDate };
+
+        if (reportType === 'tongquan') {
+            renderTongQuanReport(filteredData, startDate, endDate);
+        } else if (reportType === 'hlv') {
+            // Sẽ làm ở Bước 4c
+            reportResultsContainer.innerHTML = `<p class="text-center text-gray-500">Chức năng "Báo cáo Thu nhập HLV" sẽ được cập nhật ở Bước 4c.</p>`;
+        }
+        
+        reportPrintBtn.disabled = false;
+        // reportExcelBtn.disabled = false; // Sẽ mở ở Bước 5
+
+    } catch (error) {
+        console.error("Lỗi khi tạo báo cáo:", error);
+        showModal(`Lỗi khi tạo báo cáo: ${error.message}`, "Lỗi");
+        reportResultsContainer.innerHTML = `<p class="text-center text-red-500">Đã xảy ra lỗi: ${error.message}</p>`;
+    } finally {
+        reportSpinner.classList.add('hidden');
+        reportViewBtn.disabled = false;
+    }
+};
+reportViewBtn.addEventListener('click', generateReport);
+
+
+// Hàm hiển thị Báo cáo Tổng quan
+const renderTongQuanReport = (data, startDate, endDate) => {
+    let totalRevenue = 0;
+    let totalHbaNhan = 0;
+    let totalHlvGross = 0;
+    let totalThue = 0;
+    let totalHlvNet = 0;
+    
+    data.forEach(hv => {
+        totalRevenue += hv.hocPhi;
+        totalHbaNhan += hv.hbaNhan;
+        totalHlvGross += hv.tongHoaHong;
+        totalThue += hv.thue;
+        totalHlvNet += hv.hlvThucNhan;
+    });
+    
+    const html = `
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo Cáo Tổng Quan</h3>
+        <p class="text-sm text-gray-600 mb-4">
+            Từ ngày: <span class="font-medium">${formatDateForDisplay(startDate)}</span> 
+            Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
+        </p>
+        
+        <!-- Thẻ thống kê tổng quan -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
+                <span class="text-2xl font-bold text-blue-900">${formatCurrency(totalRevenue)} VNĐ</span>
+            </div>
+            <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
+                <span class="block text-sm font-medium text-green-700">Tổng HV Mới</span>
+                <span class="text-2xl font-bold text-green-900">${data.length}</span>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <span class="block text-sm font-medium text-yellow-700">HLV Thực Nhận (Net)</span>
+                <span class="text-2xl font-bold text-yellow-900">${formatCurrency(totalHlvNet)} VNĐ</span>
+            </div>
+        </div>
+        
+        <!-- Bảng chi tiết Tổng quan -->
+        <div class="overflow-x-auto rounded-lg shadow">
+            <table class="min-w-full divide-y divide-gray-200 bg-white">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chỉ số</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền (VNĐ)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Tổng Doanh Thu</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(totalRevenue)}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">HBA Nhận (${globalRateHBA}%)</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(totalHbaNhan)}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Tổng Hoa Hồng HLV (Gross)</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(totalHlvGross)}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Tổng Thuế TNCN (${globalRateTax}%)</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(totalThue)}</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Tổng HLV Thực Nhận (Net)</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(totalHlvNet)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    reportResultsContainer.innerHTML = html;
 };
