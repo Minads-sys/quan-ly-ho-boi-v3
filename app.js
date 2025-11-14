@@ -148,7 +148,7 @@ const hocVienEditSdtInput = document.getElementById('hocvien-edit-sdt');
 const hocVienEditMaTheInput = document.getElementById('hocvien-edit-mathe');
 const hocVienEditPhieuThuInput = document.getElementById('hocvien-edit-phieuthu');
 const hocVienEditGoiHocInput = document.getElementById('hocvien-edit-goihoc');
-const hocVienEditHLVInput = document.getElementById('hocvien-edit-hlv');
+const hocVienEditHLVInput = document.getElementById('hocvien-edit-hlv'); // (Đã đổi thành <select>)
 const hocVienEditNgayGhiInput = document.getElementById('hocvien-edit-ngayghi');
 const hocVienEditNgayHetInput = document.getElementById('hocvien-edit-ngayhet');
 const hocVienEditCancelButton = document.getElementById('hocvien-edit-cancel-button');
@@ -1093,7 +1093,17 @@ const openHocVienEditModal = (hocvien) => {
     hocVienEditMaTheInput.value = hocvien.maThe || '';
     hocVienEditPhieuThuInput.value = hocvien.soPhieuThu || '';
     hocVienEditGoiHocInput.value = hocvien.tenGoiHoc;
-    hocVienEditHLVInput.value = hocvien.tenHLV;
+    
+    // (SỬA) Nạp danh sách HLV vào dropdown
+    hocVienEditHLVInput.innerHTML = ''; // Xoá các HLV cũ
+    globalHLVList.forEach(hlv => {
+        const option = document.createElement('option');
+        option.value = hlv.id;
+        option.textContent = `${hlv.tenHLV} (${hlv.caDay})`;
+        hocVienEditHLVInput.appendChild(option);
+    });
+    // Tự động chọn HLV hiện tại của học viên
+    hocVienEditHLVInput.value = hocvien.hlvId;
     
     hocVienEditNgayGhiInput.value = formatDateForInput(hocvien.ngayGhiDanh);
     hocVienEditNgayHetInput.value = formatDateForInput(hocvien.ngayHetHan);
@@ -1137,13 +1147,20 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         const ngayGhiDanhMoi = new Date(hocVienEditNgayGhiInput.value);
         const ngayHetHanMoi = new Date(hocVienEditNgayHetInput.value);
         
+        // (SỬA) Lấy thông tin HLV mới từ dropdown
+        const newHlvId = hocVienEditHLVInput.value;
+        const newHlv = globalHLVList.find(h => h.id === newHlvId);
+        const newHlvTen = newHlv ? newHlv.tenHLV : 'N/A';
+        
         const dataToUpdate = {
             tenHV: hocVienEditTenInput.value.trim(),
             sdtHV: hocVienEditSdtInput.value.trim(),
             maThe: hocVienEditMaTheInput.value.trim(),
             soPhieuThu: hocVienEditPhieuThuInput.value.trim(),
             ngayGhiDanh: Timestamp.fromDate(ngayGhiDanhMoi),
-            ngayHetHan: Timestamp.fromDate(ngayHetHanMoi)
+            ngayHetHan: Timestamp.fromDate(ngayHetHanMoi),
+            hlvId: newHlvId,   // <-- Dòng mới
+            tenHLV: newHlvTen  // <-- Dòng mới
         };
 
         await updateDoc(doc(db, "hocvien", id), dataToUpdate);
@@ -1655,8 +1672,8 @@ const handleExportExcel = () => {
                 if (!reportByHLV[hv.hlvId]) {
                     reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0 };
                 }
-                reportByHLV[hv.hlvId].soHVMoi++;
-                reportByHLV[hv.hlvId].tongDoanhThu += hv.hocPhi;
+                reportByHLV[hlvId].soHVMoi++;
+                reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
                 reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
