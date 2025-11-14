@@ -659,9 +659,12 @@
                         <input type="text" id="hocvien-edit-goihoc" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
                     </div>
                     <div>
-                        <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Chỉ xem)</label>
-                        <input type="text" id="hocvien-edit-hlv" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
-                    </div>
+                    <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Có thể sửa)</label>
+                    <select id="hocvien-edit-hlv" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        <!-- Danh sách HLV sẽ được app.js nạp vào đây -->
+                        <option value="">-- Đang tải danh sách HLV --</option>
+                    </select>
+                </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 pb-2 border-t border-b border-gray-200">
@@ -701,4 +704,5 @@
     
 </body>
 </html>
+
 
