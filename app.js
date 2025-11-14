@@ -156,6 +156,13 @@ const hocVienEditCancelButton = document.getElementById('hocvien-edit-cancel-but
 // (MỚI) Elements cho In Phiếu (Step 3c)
 const printSection = document.getElementById('print-section');
 
+// (MỚI) Elements cho Báo cáo nhanh (Step 4a)
+const qrDtNgay = document.getElementById('qr-dt-ngay');
+const qrDtThang = document.getElementById('qr-dt-thang');
+const qrHvNgay = document.getElementById('qr-hv-ngay');
+const qrHvTuan = document.getElementById('qr-hv-tuan');
+const qrHvTableBody = document.getElementById('qr-hv-table-body');
+
 
 // --- HÀM UTILITY (Chung) ---
 
@@ -695,7 +702,8 @@ const loadHocVien = () => {
         });
         
         updateHLVCounters();
-        applyHocVienFilterAndRender(); // (MỚI) Step 3b
+        applyHocVienFilterAndRender();
+        updateQuickReport(); // (MỚI) Step 4a
     }, (error) => {
         console.error("Lỗi khi tải học viên:", error);
         showModal(`Không thể tải danh sách học viên: ${error.message}`, "Lỗi");
@@ -902,6 +910,41 @@ const resetGhiDanhForm = () => {
 };
 ghiDanhResetButton.addEventListener('click', resetGhiDanhForm);
 
+// (MỚI) BƯỚC 3c: IN PHIẾU
+const handlePrintPhieu = () => {
+    if (!lastRegisteredHocVien) {
+        showModal("Không có thông tin học viên để in. Vui lòng ghi danh trước.", "Lỗi");
+        return;
+    }
+    
+    const hv = lastRegisteredHocVien;
+    
+    // Tạo nội dung HTML cho phiếu in
+    const printContent = `
+        <div id="print-header">
+            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
+            <h5>Hồ bơi HBA Phú Lâm</h5>
+        </div>
+        <h2 id="print-title">PHIẾU GHI DANH HỌC BƠI</h2>
+        <div id="print-details">
+            <p><strong>Ngày ghi danh:</strong> ${formatDateForDisplay(hv.ngayGhiDanh)}</p>
+            <p><strong>Họ tên học viên:</strong> ${hv.tenHV}</p>
+            <p><strong>Số điện thoại:</strong> ${hv.sdtHV}</p>
+            <p><strong>Gói học:</strong> ${hv.tenGoiHoc} (${hv.soBuoi} buổi)</p>
+            <p><strong>HLV phụ trách:</strong> ${hv.tenHLV}</p>
+            <p><strong>Học phí:</strong> ${formatCurrency(hv.hocPhi)} VNĐ</p>
+            <p><strong>Ngày hết hạn:</strong> ${formatDateForDisplay(hv.ngayHetHan)}</p>
+        </div>
+    `;
+    
+    // Đưa nội dung vào khu vực in và gọi lệnh in
+    printSection.innerHTML = printContent;
+    document.body.classList.add('printing'); // Thêm class để CSS @media print hoạt động
+    window.print();
+    document.body.classList.remove('printing'); // Xoá class sau khi in
+};
+ghiDanhPrintButton.addEventListener('click', handlePrintPhieu);
+
 
 // --- (MỚI) NGHIỆP VỤ BƯỚC 3b: QUẢN LÝ HỌC VIÊN ---
 
@@ -1070,3 +1113,62 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         showModal(`Lỗi khi cập nhật: ${error.message}`, "Lỗi");
     }
 });
+
+
+// --- (MỚI) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN ---
+const updateQuickReport = () => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Tìm ngày Thứ Hai của tuần hiện tại
+    const dayOfWeek = now.getDay(); // 0 = CN, 1 = T2, ...
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Lùi về T2
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
+    startOfWeek.setHours(0,0,0,0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let doanhThuHomNay = 0;
+    let doanhThuThangNay = 0;
+    let soHVHomNay = 0;
+    let soHVTuanNay = 0;
+    let danhSachHVHomNayHTML = '';
+    
+    globalHocVienList.forEach((hv, index) => {
+        const ngayGhiDanh = hv.ngayGhiDanh.toDate();
+        
+        if (ngayGhiDanh >= startOfToday) {
+            doanhThuHomNay += hv.hocPhi;
+            soHVHomNay++;
+            // Thêm vào danh sách (chỉ cần STT, Tên, HLV)
+            danhSachHVHomNayHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${soHVHomNay}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
+                </tr>
+            `;
+        }
+        
+        if (ngayGhiDanh >= startOfWeek) {
+            soHVTuanNay++;
+        }
+        
+        if (ngayGhiDanh >= startOfMonth) {
+            doanhThuThangNay += hv.hocPhi;
+        }
+    });
+    
+    // Cập nhật 4 thẻ
+    qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
+    qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
+    qrHvNgay.textContent = soHVHomNay;
+    qrHvTuan.textContent = soHVTuanNay;
+    
+    // Cập nhật bảng
+    if (soHVHomNay === 0) {
+        qrHvTableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Chưa có học viên nào hôm nay.</td></tr>`;
+    } else {
+        qrHvTableBody.innerHTML = danhSachHVHomNayHTML;
+    }
+};
