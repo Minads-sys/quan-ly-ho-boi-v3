@@ -938,7 +938,7 @@ const resetGhiDanhForm = () => {
 };
 ghiDanhResetButton.addEventListener('click', resetGhiDanhForm);
 
-// (MỚI) BƯỚC 3c: IN PHIẾU
+// (SỬA LỖI IN TRANG TRẮNG) BƯỚC 3c: IN PHIẾU
 const handlePrintPhieu = () => {
     if (!lastRegisteredHocVien) {
         showModal("Không có thông tin học viên để in. Vui lòng ghi danh trước.", "Lỗi");
@@ -967,9 +967,16 @@ const handlePrintPhieu = () => {
     
     // Đưa nội dung vào khu vực in và gọi lệnh in
     printSection.innerHTML = printContent;
-    document.body.classList.add('printing'); // Thêm class để CSS @media print hoạt động
+    
+    // (SỬA LỖI) Gỡ class 'hidden' (display: none)
+    printSection.classList.remove('hidden');
+    document.body.classList.add('printing');
+    
     window.print();
-    document.body.classList.remove('printing'); // Xoá class sau khi in
+    
+    document.body.classList.remove('printing');
+    // (SỬA LỖI) Thêm class 'hidden' trở lại
+    printSection.classList.add('hidden');
 };
 ghiDanhPrintButton.addEventListener('click', handlePrintPhieu);
 
@@ -1550,7 +1557,7 @@ const generateHLVReportPrintHTML = (data) => {
     `;
 };
 
-// Hàm xử lý In Báo cáo
+// (SỬA LỖI IN TRANG TRẮNG)
 const handlePrintReport = () => {
     if (currentReportData.length === 0 && currentReportType === 'tongquan') {
         // Cho phép in báo cáo tổng quan rỗng
@@ -1588,9 +1595,16 @@ const handlePrintReport = () => {
     `;
 
     printSection.innerHTML = printContent;
+    
+    // (SỬA LỖI) Gỡ class 'hidden' (display: none)
+    printSection.classList.remove('hidden');
     document.body.classList.add('printing');
+    
     window.print();
+    
     document.body.classList.remove('printing');
+    // (SỬA LỖI) Thêm class 'hidden' trở lại
+    printSection.classList.add('hidden');
 };
 reportPrintBtn.addEventListener('click', handlePrintReport);
 
@@ -1639,11 +1653,11 @@ const handleExportExcel = () => {
             currentReportData.forEach(hv => {
                 if (!hv.hlvId) return;
                 if (!reportByHLV[hv.hlvId]) {
-                    reportByHLV[hv.hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0 };
+                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0 };
                 }
                 reportByHLV[hv.hlvId].soHVMoi++;
                 reportByHLV[hv.hlvId].tongDoanhThu += hv.hocPhi;
-                reportByHLV[hv.hlvId].tongThucNhan += hv.hlvThucNhan;
+                reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
 
