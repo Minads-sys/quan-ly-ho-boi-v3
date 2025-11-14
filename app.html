@@ -260,7 +260,18 @@
                 <!-- Nội dung Tab 2: Quản lý HV (Step 3b) -->
                 <!-- =================================== -->
                 <div id="content-ql-hv" class="tab-panel">
-                    <h2 class="text-2xl font-semibold mb-6">Quản lý Học Viên</h2>
+                    <!-- (MỚI) Thêm 2 nút In/Xuất và bọc title bằng flexbox -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold">Quản lý Học Viên</h2>
+                        <div class="flex gap-2">
+                            <button id="hv-list-print-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                In Danh Sách
+                            </button>
+                            <button id="hv-list-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                                Xuất Excel
+                            </button>
+                        </div>
+                    </div>
                     
                     <!-- Thanh Lọc và Tìm kiếm -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

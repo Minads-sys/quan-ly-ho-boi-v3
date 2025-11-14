@@ -137,6 +137,9 @@ const hvSearchInput = document.getElementById('hv-search-input');
 const filterBtnThangNay = document.getElementById('filter-hv-thangnay');
 const filterBtnTatCa = document.getElementById('filter-hv-tatca');
 let currentHVFilter = 'thangnay'; // 'thangnay' or 'tatca'
+// (MỚI) Nâng cấp 2: Nút In/Xuất HV
+const hvListPrintBtn = document.getElementById('hv-list-print-btn');
+const hvListExcelBtn = document.getElementById('hv-list-excel-btn');
 
 // (MỚI) Elements cho Modal Sửa Học Viên (Step 3b)
 const hocVienEditModal = document.getElementById('hocvien-edit-modal');
@@ -938,7 +941,7 @@ const resetGhiDanhForm = () => {
 };
 ghiDanhResetButton.addEventListener('click', resetGhiDanhForm);
 
-// (SỬA LỖI IN TRANG TRẮNG) BƯỚC 3c: IN PHIẾU
+// (SỬA LỖI IN TRANG TRẮNG & THÊM DỮ LIỆU) BƯỚC 3c
 const handlePrintPhieu = () => {
     if (!lastRegisteredHocVien) {
         showModal("Không có thông tin học viên để in. Vui lòng ghi danh trước.", "Lỗi");
@@ -1063,7 +1066,7 @@ filterBtnThangNay.addEventListener('click', () => {
     currentHVFilter = 'thangnay';
     // Active 'Tháng Này'
     filterBtnThangNay.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-    filterBtnThangNay.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-7Boolean');
+    filterBtnThangNay.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
     // Inactive 'Tất Cả'
     filterBtnTatCa.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
     filterBtnTatCa.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
@@ -1098,7 +1101,7 @@ hocVienTableBody.addEventListener('click', (e) => {
     }
 });
 
-// Hàm mở Modal Sửa Học Viên
+// (NÂNG CẤP) Hàm mở Modal Sửa Học Viên (Thêm nạp HLV)
 const openHocVienEditModal = (hocvien) => {
     hocVienEditForm.reset();
     hocVienEditIdInput.value = hocvien.id;
@@ -1110,7 +1113,7 @@ const openHocVienEditModal = (hocvien) => {
     hocVienEditPhieuThuInput.value = hocvien.soPhieuThu || '';
     hocVienEditGoiHocInput.value = hocvien.tenGoiHoc;
     
-    // (SỬA) Nạp danh sách HLV vào dropdown
+    // (NÂNG CẤP) Nạp danh sách HLV vào dropdown
     hocVienEditHLVInput.innerHTML = ''; // Xoá các HLV cũ
     globalHLVList.forEach(hlv => {
         const option = document.createElement('option');
@@ -1152,7 +1155,7 @@ hocVienEditNgayGhiInput.addEventListener('change', () => {
     }
 });
 
-// Xử lý Lưu Học Viên
+// (NÂNG CẤP) Xử lý Lưu Học Viên (Thêm lưu HLV)
 hocVienEditForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -1163,10 +1166,13 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         const ngayGhiDanhMoi = new Date(hocVienEditNgayGhiInput.value);
         const ngayHetHanMoi = new Date(hocVienEditNgayHetInput.value);
         
-        // (SỬA) Lấy thông tin HLV mới từ dropdown
+        // (NÂNG CẤP) Lấy thông tin HLV mới từ dropdown
         const newHlvId = hocVienEditHLVInput.value;
         const newHlv = globalHLVList.find(h => h.id === newHlvId);
-        const newHlvTen = newHlv ? newHlv.tenHLV : 'N/A';
+        if (!newHlv) {
+            throw new Error("HLV được chọn không hợp lệ.");
+        }
+        const newHlvTen = newHlv.tenHLV;
         
         const dataToUpdate = {
             tenHV: hocVienEditTenInput.value.trim(),
@@ -1191,7 +1197,7 @@ hocVienEditForm.addEventListener('submit', async (e) => {
 });
 
 
-// --- (MỚI) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN ---
+// --- (MỚI) NGHIỆP VỤ BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN ---
 const updateQuickReport = () => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1439,7 +1445,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
     reportResultsContainer.innerHTML = html;
 };
 
-// --- (MỚI) BƯỚC 4c: BÁO CÁO THU NHẬP HLV ---
+// --- (NÂNG CẤP) BƯỚC 4c: BÁO CÁO THU NHẬP HLV (Thêm cột Thuế) ---
 const renderHLVReport = (data, startDate, endDate) => {
     // 1. Gom nhóm dữ liệu theo hlvId
     const reportByHLV = {};
@@ -1454,6 +1460,7 @@ const renderHLVReport = (data, startDate, endDate) => {
                 tenHLV: hv.tenHLV,
                 soHVMoi: 0,
                 tongDoanhThu: 0,
+                tongThue: 0, // <-- (NÂNG CẤP 1) Thêm
                 tongThucNhan: 0
             };
         }
@@ -1461,6 +1468,7 @@ const renderHLVReport = (data, startDate, endDate) => {
         // Cộng dồn
         reportByHLV[hlvId].soHVMoi++;
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+        reportByHLV[hlvId].tongThue += hv.thue; // <-- (NÂNG CẤP 1) Thêm
         reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
 
@@ -1483,17 +1491,19 @@ const renderHLVReport = (data, startDate, endDate) => {
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Mới</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu Mang Về</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuế Phải Nộp</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Thực Nhận (Sau Thuế)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     ${reportArray.length === 0 
-                        ? `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>`
+                        ? `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>`
                         : reportArray.map(hlv => `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHVMoi}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">${formatCurrency(hlv.tongThue)} VNĐ</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hlv.tongThucNhan)} VNĐ</td>
                             </tr>
                         `).join('')
@@ -1548,7 +1558,7 @@ const generateTongQuanPrintHTML = (data) => {
     `;
 };
 
-// Hàm tạo HTML cho Báo cáo HLV (bản in)
+// (NÂNG CẤP) Hàm tạo HTML cho Báo cáo HLV (bản in) (Thêm cột Thuế)
 const generateHLVReportPrintHTML = (data) => {
     const reportByHLV = {};
     data.forEach(hv => {
@@ -1556,11 +1566,12 @@ const generateHLVReportPrintHTML = (data) => {
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
             reportByHLV[hlvId] = {
-                tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0
+                tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0
             };
         }
         reportByHLV[hlvId].soHVMoi++;
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+        reportByHLV[hlvId].tongThue += hv.thue;
         reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
     
@@ -1573,6 +1584,7 @@ const generateHLVReportPrintHTML = (data) => {
                     <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tên HLV</th>
                     <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Số HV Mới</th>
                     <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tổng Doanh Thu Mang Về</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Thuế Phải Nộp</th>
                     <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tổng Thực Nhận (Sau Thuế)</th>
                 </tr>
             </thead>
@@ -1582,6 +1594,7 @@ const generateHLVReportPrintHTML = (data) => {
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHVMoi}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongThue)} VNĐ</td>
                         <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${formatCurrency(hlv.tongThucNhan)} VNĐ</td>
                     </tr>
                 `).join('')}
@@ -1642,7 +1655,7 @@ const handlePrintReport = () => {
 reportPrintBtn.addEventListener('click', handlePrintReport);
 
 
-// --- (MỚI) BƯỚC 5b: XUẤT EXCEL ---
+// --- (NÂNG CẤP) BƯỚC 5b: XUẤT EXCEL (Thêm cột Thuế) ---
 const handleExportExcel = () => {
     if (currentReportData.length === 0 && currentReportType === 'tongquan') {
         // Cho phép xuất báo cáo tổng quan rỗng
@@ -1686,10 +1699,11 @@ const handleExportExcel = () => {
             currentReportData.forEach(hv => {
                 if (!hv.hlvId) return;
                 if (!reportByHLV[hv.hlvId]) {
-                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0 };
+                    reportByHLV[hv.hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 };
                 }
-                reportByHLV[hlvId].soHVMoi++;
-                reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+                reportByHLV[hv.hlvId].soHVMoi++;
+                reportByHLV[hv.hlvId].tongDoanhThu += hv.hocPhi;
+                reportByHLV[hv.hlvId].tongThue += hv.thue;
                 reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
@@ -1698,7 +1712,7 @@ const handleExportExcel = () => {
                 ["BÁO CÁO THU NHẬP HLV"],
                 [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`],
                 [], // Hàng trống
-                ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu Mang Về", "Tổng Thực Nhận (Sau Thuế)"]
+                ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu Mang Về", "Thuế Phải Nộp", "Tổng Thực Nhận (Sau Thuế)"]
             ];
             
             reportArray.forEach(hlv => {
@@ -1706,6 +1720,7 @@ const handleExportExcel = () => {
                     hlv.tenHLV,
                     hlv.soHVMoi,
                     hlv.tongDoanhThu,
+                    hlv.tongThue,
                     hlv.tongThucNhan
                 ]);
             });
@@ -1717,7 +1732,7 @@ const handleExportExcel = () => {
 
         // (Tùy chọn) Tùy chỉnh độ rộng cột
         if (currentReportType === 'hlv') {
-            ws['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 30 } ];
+            ws['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 30 } ]; // (NÂNG CẤP) Thêm độ rộng cột Thuế
         } else if (currentReportType === 'tongquan') {
             ws['!cols'] = [ { wch: 30 }, { wch: 25 } ];
         }
@@ -1737,7 +1752,7 @@ const handleExportExcel = () => {
 reportExcelBtn.addEventListener('click', handleExportExcel);
 
 
-// --- (MỚI) BƯỚC 5c: IMPORT DỮ LIỆU ---
+// --- (NÂNG CẤP) BƯỚC 5c: IMPORT DỮ LIỆU ---
 const handleImportStart = () => {
     const file = importFileInput.files[0];
     if (!file) {
@@ -1885,3 +1900,119 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
+
+
+// --- (NÂNG CẤP) Nâng cấp 2: IN VÀ XUẤT EXCEL TAB QUẢN LÝ HV ---
+
+// (NÂNG CẤP 2) Hàm In danh sách HV đang hiển thị
+const handlePrintHVList = () => {
+    if (filteredHocVienList.length === 0) {
+        showModal("Không có dữ liệu học viên để in.", "Lỗi");
+        return;
+    }
+
+    const tableHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tên HV</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Doanh Thu</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HBA Nhận</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Thuế</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Net</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filteredHocVienList.map(hv => `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || 'N/A'}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hocPhi)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hbaNhan)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.thue)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hlvThucNhan)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+
+    const printContent = `
+        <div id="print-header">
+            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
+        </div>
+        <h2 id="print-title">DANH SÁCH HỌC VIÊN</h2>
+        <p style="font-size: 12pt; margin-bottom: 20px; text-align: center;">
+            (Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : 'Toàn Bộ'})
+        </p>
+        ${tableHTML}
+    `;
+    
+    printSection.innerHTML = printContent;
+    printSection.classList.remove('hidden');
+    document.body.classList.add('printing');
+    window.print();
+    document.body.classList.remove('printing');
+    printSection.classList.add('hidden');
+};
+hvListPrintBtn.addEventListener('click', handlePrintHVList);
+
+// (NÂNG CẤP 2) Hàm Xuất Excel danh sách HV đang hiển thị
+const handleExportHVList = () => {
+    if (filteredHocVienList.length === 0) {
+        showModal("Không có dữ liệu học viên để xuất Excel.", "Lỗi");
+        return;
+    }
+
+    try {
+        const dataForSheet = [
+            ["DANH SÁCH HỌC VIÊN"],
+            [`(Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : 'Toàn Bộ'})`],
+            [],
+            [
+                "Tên Học Viên", "Số Điện Thoại", "HLV Phụ Trách", "Gói Học",
+                "Ngày Ghi Danh", "Ngày Hết Hạn",
+                "Tổng Doanh Thu", "HBA Nhận", "Tổng Hoa Hồng", "Thuế", "HLV Thực Nhận"
+            ]
+        ];
+
+        filteredHocVienList.forEach(hv => {
+            dataForSheet.push([
+                hv.tenHV,
+                hv.sdtHV,
+                hv.tenHLV || 'N/A',
+                hv.tenGoiHoc,
+                formatDateForDisplay(hv.ngayGhiDanh),
+                formatDateForDisplay(hv.ngayHetHan),
+                hv.hocPhi,
+                hv.hbaNhan,
+                hv.tongHoaHong,
+                hv.thue,
+                hv.hlvThucNhan
+            ]);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+        
+        ws['!cols'] = [
+            { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+            { wch: 15 }, { wch: 15 },
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'DanhSachHV');
+        const fileName = `DanhSachHocVien_${currentHVFilter}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+    } catch (error) {
+        console.error("Lỗi khi xuất Excel DS HV:", error);
+        showModal(`Không thể xuất file Excel: ${error.message}`, "Lỗi");
+    }
+};
+hvListExcelBtn.addEventListener('click', handleExportHVList);
