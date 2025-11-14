@@ -181,6 +181,13 @@ let currentReportData = []; // Lưu dữ liệu báo cáo để In/Xuất
 let currentReportType = 'tongquan';
 let currentReportParams = {};
 
+// (MỚI) Elements cho Tab Import (Step 5a)
+const importFileInput = document.getElementById('import-file-input');
+const importStartBtn = document.getElementById('import-start-btn');
+const importSpinner = document.getElementById('import-spinner');
+const importResultsContainer = document.getElementById('import-results-container');
+const importLog = document.getElementById('import-log');
+
 
 // --- HÀM UTILITY (Chung) ---
 
@@ -1291,7 +1298,7 @@ const generateReport = () => {
         }
         
         reportPrintBtn.disabled = false;
-        // reportExcelBtn.disabled = false; // Sẽ mở ở Bước 5
+        reportExcelBtn.disabled = false; // (MỚI) Kích hoạt nút Xuất Excel
 
     } catch (error) {
         console.error("Lỗi khi tạo báo cáo:", error);
@@ -1535,7 +1542,9 @@ const generateHLVReportPrintHTML = (data) => {
 
 // Hàm xử lý In Báo cáo
 const handlePrintReport = () => {
-    if (currentReportData.length === 0) {
+    if (currentReportData.length === 0 && currentReportType === 'tongquan') {
+        // Cho phép in báo cáo tổng quan rỗng
+    } else if (currentReportData.length === 0) {
         showModal("Không có dữ liệu để in.", "Lỗi");
         return;
     }
@@ -1574,3 +1583,98 @@ const handlePrintReport = () => {
     document.body.classList.remove('printing');
 };
 reportPrintBtn.addEventListener('click', handlePrintReport);
+
+
+// --- (MỚI) BƯỚC 5b: XUẤT EXCEL ---
+const handleExportExcel = () => {
+    if (currentReportData.length === 0 && currentReportType === 'tongquan') {
+        // Cho phép xuất báo cáo tổng quan rỗng
+    } else if (currentReportData.length === 0) {
+        showModal("Không có dữ liệu để xuất Excel.", "Lỗi");
+        return;
+    }
+
+    let dataForSheet = [];
+    let sheetName = "BaoCao";
+    const { startDate, endDate } = currentReportParams;
+    const dateRangeStr = `${formatDateForInput(startDate)}_den_${formatDateForInput(endDate)}`;
+
+    try {
+        if (currentReportType === 'tongquan') {
+            sheetName = `TongQuan_${dateRangeStr}`;
+            
+            // Tái tính toán
+            let totalRevenue = 0, totalHbaNhan = 0, totalHlvGross = 0, totalThue = 0, totalHlvNet = 0;
+            currentReportData.forEach(hv => {
+                totalRevenue += hv.hocPhi; totalHbaNhan += hv.hbaNhan; totalHlvGross += hv.tongHoaHong; totalThue += hv.thue; totalHlvNet += hv.hlvThucNhan;
+            });
+
+            dataForSheet = [
+                ["BÁO CÁO TỔNG QUAN"],
+                [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`],
+                [], // Hàng trống
+                ["Chỉ số", "Số tiền (VNĐ)"],
+                ["Tổng Doanh Thu", totalRevenue],
+                [`HBA Nhận (${globalRateHBA}%)`, totalHbaNhan],
+                ["Tổng Hoa Hồng HLV (Gross)", totalHlvGross],
+                [`Tổng Thuế TNCN (${globalRateTax}%)`, totalThue],
+                ["Tổng HLV Thực Nhận (Net)", totalHlvNet]
+            ];
+        
+        } else if (currentReportType === 'hlv') {
+            sheetName = `ThuNhapHLV_${dateRangeStr}`;
+
+            // Tái gom nhóm
+            const reportByHLV = {};
+            currentReportData.forEach(hv => {
+                if (!hv.hlvId) return;
+                if (!reportByHLV[hv.hlvId]) {
+                    reportByHLV[hv.hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThucNhan: 0 };
+                }
+                reportByHLV[hv.hlvId].soHVMoi++;
+                reportByHLV[hv.hlvId].tongDoanhThu += hv.hocPhi;
+                reportByHLV[hv.hlvId].tongThucNhan += hv.hlvThucNhan;
+            });
+            const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
+
+            dataForSheet = [
+                ["BÁO CÁO THU NHẬP HLV"],
+                [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`],
+                [], // Hàng trống
+                ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu Mang Về", "Tổng Thực Nhận (Sau Thuế)"]
+            ];
+            
+            reportArray.forEach(hlv => {
+                dataForSheet.push([
+                    hlv.tenHLV,
+                    hlv.soHVMoi,
+                    hlv.tongDoanhThu,
+                    hlv.tongThucNhan
+                ]);
+            });
+        }
+
+        // Tạo workbook và worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+
+        // (Tùy chọn) Tùy chỉnh độ rộng cột
+        if (currentReportType === 'hlv') {
+            ws['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 30 } ];
+        } else if (currentReportType === 'tongquan') {
+            ws['!cols'] = [ { wch: 30 }, { wch: 25 } ];
+        }
+
+        // Thêm worksheet vào workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'BaoCao');
+
+        // Tạo và tải file
+        const fileName = `BaoCao_${sheetName}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+    } catch (error) {
+        console.error("Lỗi khi xuất Excel:", error);
+        showModal(`Không thể xuất file Excel: ${error.message}`, "Lỗi");
+    }
+};
+reportExcelBtn.addEventListener('click', handleExportExcel);
