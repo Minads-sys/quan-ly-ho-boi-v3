@@ -1286,8 +1286,8 @@ const generateReport = () => {
         if (reportType === 'tongquan') {
             renderTongQuanReport(filteredData, startDate, endDate);
         } else if (reportType === 'hlv') {
-            // Sẽ làm ở Bước 4c
-            reportResultsContainer.innerHTML = `<p class="text-center text-gray-500">Chức năng "Báo cáo Thu nhập HLV" sẽ được cập nhật ở Bước 4c.</p>`;
+            // (MỚI) Bước 4c: Gọi hàm render Báo cáo HLV
+            renderHLVReport(filteredData, startDate, endDate);
         }
         
         reportPrintBtn.disabled = false;
@@ -1328,7 +1328,6 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
-        <!-- Thẻ thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
@@ -1344,7 +1343,6 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             </div>
         </div>
         
-        <!-- Bảng chi tiết Tổng quan -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1374,6 +1372,72 @@ const renderTongQuanReport = (data, startDate, endDate) => {
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Tổng HLV Thực Nhận (Net)</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(totalHlvNet)}</td>
                     </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    reportResultsContainer.innerHTML = html;
+};
+
+// --- (MỚI) BƯỚC 4c: BÁO CÁO THU NHẬP HLV ---
+const renderHLVReport = (data, startDate, endDate) => {
+    // 1. Gom nhóm dữ liệu theo hlvId
+    const reportByHLV = {};
+
+    data.forEach(hv => {
+        const hlvId = hv.hlvId;
+        if (!hlvId) return; // Bỏ qua nếu HV không có HLV
+
+        if (!reportByHLV[hlvId]) {
+            // Nếu HLV này chưa có trong báo cáo, tạo mới
+            reportByHLV[hlvId] = {
+                tenHLV: hv.tenHLV,
+                soHVMoi: 0,
+                tongDoanhThu: 0,
+                tongThucNhan: 0
+            };
+        }
+        
+        // Cộng dồn
+        reportByHLV[hlvId].soHVMoi++;
+        reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+        reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
+    });
+
+    // 2. Chuyển object thành mảng để dễ render và sắp xếp
+    const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan); // Sắp xếp theo thu nhập giảm dần
+
+    // 3. Tạo HTML
+    const html = `
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo Cáo Thu Nhập HLV</h3>
+        <p class="text-sm text-gray-600 mb-4">
+            Từ ngày: <span class="font-medium">${formatDateForDisplay(startDate)}</span> 
+            Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
+        </p>
+        
+        <div class="overflow-x-auto rounded-lg shadow">
+            <table class="min-w-full divide-y divide-gray-200 bg-white">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Mới</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu Mang Về</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Thực Nhận (Sau Thuế)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    ${reportArray.length === 0 
+                        ? `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>`
+                        : reportArray.map(hlv => `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHVMoi}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hlv.tongThucNhan)} VNĐ</td>
+                            </tr>
+                        `).join('')
+                    }
                 </tbody>
             </table>
         </div>
