@@ -153,6 +153,9 @@ const hocVienEditNgayGhiInput = document.getElementById('hocvien-edit-ngayghi');
 const hocVienEditNgayHetInput = document.getElementById('hocvien-edit-ngayhet');
 const hocVienEditCancelButton = document.getElementById('hocvien-edit-cancel-button');
 
+// (MỚI) Elements cho In Phiếu (Step 3c)
+const printSection = document.getElementById('print-section');
+
 
 // --- HÀM UTILITY (Chung) ---
 
@@ -161,7 +164,7 @@ const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN').format(value || 0);
 };
 
-// (MỚI) Hàm định dạng ngày YYYY-MM-DD (cho input type="date")
+// Hàm định dạng ngày YYYY-MM-DD (cho input type="date")
 const formatDateForInput = (date) => {
     if (!date) return '';
     const d = (date instanceof Date) ? date : date.toDate();
@@ -171,7 +174,7 @@ const formatDateForInput = (date) => {
     return `${year}-${month}-${day}`;
 };
 
-// (MỚI) Hàm định dạng ngày DD/MM/YYYY (cho hiển thị)
+// Hàm định dạng ngày DD/MM/YYYY (cho hiển thị)
 const formatDateForDisplay = (date) => {
     if (!date) return 'N/A';
     const d = (date instanceof Date) ? date : date.toDate();
@@ -598,7 +601,7 @@ const renderHLVTable = () => {
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.thuTuUuTien || 99}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${hlv.soHVHienTai || 0}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium admin-only">
                 <button data-id="${hlv.id}" class="edit-hlv-btn text-indigo-600 hover:text-indigo-900">Sửa</button>
                 <button data-id="${hlv.id}" data-name="${hlv.tenHLV}" class="delete-hlv-btn text-red-600 hover:text-red-900 ml-4">Xoá</button>
             </td>
