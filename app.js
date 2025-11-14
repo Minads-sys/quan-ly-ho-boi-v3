@@ -1035,19 +1035,27 @@ const renderHocVienTable = () => {
 // Gắn event cho Lọc và Tìm kiếm
 hvSearchInput.addEventListener('input', applyHocVienFilterAndRender);
 
+// (SỬA LỖI HOVER)
 filterBtnThangNay.addEventListener('click', () => {
     currentHVFilter = 'thangnay';
-    filterBtnThangNay.classList.add('bg-indigo-600', 'text-white');
-    filterBtnTatCa.classList.remove('bg-indigo-600', 'text-white');
-    filterBtnTatCa.classList.add('bg-white', 'text-gray-700');
+    // Active 'Tháng Này'
+    filterBtnThangNay.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+    filterBtnThangNay.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+    // Inactive 'Tất Cả'
+    filterBtnTatCa.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+    filterBtnTatCa.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
     applyHocVienFilterAndRender();
 });
 
+// (SỬA LỖI HOVER)
 filterBtnTatCa.addEventListener('click', () => {
     currentHVFilter = 'tatca';
-    filterBtnTatCa.classList.add('bg-indigo-600', 'text-white');
-    filterBtnThangNay.classList.remove('bg-indigo-600', 'text-white');
-    filterBtnThangNay.classList.add('bg-white', 'text-gray-700');
+    // Active 'Tất Cả'
+    filterBtnTatCa.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+    filterBtnTatCa.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+    // Inactive 'Tháng Này'
+    filterBtnThangNay.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+    filterBtnThangNay.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
     applyHocVienFilterAndRender();
 });
 
@@ -1235,18 +1243,20 @@ const setupReportTabDefaults = () => {
     reportEndDateInput.value = formatDateForInput(endDate);
 };
 
+// (SỬA LỖI HOVER)
 reportQuickFilterBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
+        const targetBtn = e.currentTarget;
+
         // Bỏ active tất cả
         reportQuickFilterBtns.forEach(b => {
-            b.classList.remove('bg-indigo-600', 'text-white');
-            b.classList.add('bg-white', 'text-gray-700');
+            b.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+            b.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
         });
         
         // Active nút được click
-        const targetBtn = e.currentTarget;
-        targetBtn.classList.add('bg-indigo-600', 'text-white');
-        targetBtn.classList.remove('bg-white', 'text-gray-700');
+        targetBtn.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+        targetBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
         
         const filterType = targetBtn.id.replace('report-filter-', '');
         
