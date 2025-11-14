@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Hồ bơi HBA V3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div id="global-loader" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]">
+        <div class="loader"></div>
+    </div>
+
+    <div id="login-screen" class="min-h-screen flex items-center justify-center hidden">
+        <div class="bg-white p-8 sm:p-10 rounded-xl shadow-lg w-full max-w-md">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Đăng nhập HBA V3</h2>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" required
+                           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                    <input type="password" id="password" required
+                           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button type="submit" id="login-button"
+                        class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                    <span id="login-spinner" class="loader-sm hidden"></span>
+                    Đăng nhập
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-app" class="min-h-screen hidden">
+        <header class="bg-white shadow-md sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-2xl font-bold text-indigo-600">HBA V3</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <span id="user-email" class="text-sm text-gray-600 hidden sm:block">...</span>
+                        <button id="logout-button" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+                            Đăng Xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <nav id="tab-navigation" class="bg-white shadow-sm sticky top-16 z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex gap-8 -mb-px">
+                    <button data-tab="ghi-danh" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-indigo-600 text-indigo-600 active-tab">
+                        Ghi Danh
+                    </button>
+                    <button data-tab="ql-hv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Quản lý HV
+                    </button>
+                    <button data-tab="ql-hlv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                        Quản lý HLV
+                    </button>
+                    <button data-tab="bao-cao" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                        Báo cáo
+                    </button>
+                    <button data-tab="import" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                        Import
+                    </button>
+                    <button data-tab="cai-dat" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                        Cài Đặt
+                    </button>
+                    <button data-tab="goi-hoc" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                        Quản lý Gói Học
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                
+                <div id="content-ghi-danh" class="tab-panel active">
+                    <h2 class="text-2xl font-semibold mb-6">Ghi Danh Học Viên Mới</h2>
+                    
+                    <form id="ghi-danh-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2 space-y-5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="tenHV" class="block text-sm font-medium text-gray-700">Tên Học Viên <span class="text-red-500">*</span></label>
+                                    <input type="text" id="tenHV" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="sdtHV" class="block text-sm font-medium text-gray-700">Số Điện Thoại <span class="text-red-500">*</span></label>
+                                    <input type="tel" id="sdtHV" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="maThe" class="block text-sm font-medium text-gray-700">Mã Thẻ (Nếu có)</label>
+                                    <input type="text" id="maThe" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="soPhieuThu" class="block text-sm font-medium text-gray-700">Số Phiếu Thu (Nếu có)</label>
+                                    <input type="text" id="soPhieuThu" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="nhomTuoi" class="block text-sm font-medium text-gray-700">Nhóm Tuổi <span class="text-red-500">*</span></label>
+                                    <select id="nhomTuoi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                        <option value="6-8">6-8 tuổi</option>
+                                        <option value=">8">&gt; 8 tuổi</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="caHoc" class="block text-sm font-medium text-gray-700">Ca Học <span class="text-red-500">*</span></label>
+                                    <select id="caHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                        <option value="Sáng">Sáng</option>
+                                        <option value="Chiều">Chiều</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="goiHoc" class="block text-sm font-medium text-gray-700">Gói Học <span class="text-red-500">*</span></label>
+                                <select id="goiHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                    <option value="">-- Chọn gói học --</option>
+                                    </select>
+                            </div>
+                            
+                            <div id="admin-chi-dinh-hlv" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50 admin-only">
+                                <div class="flex items-center">
+                                    <input id="chkChiDinh" type="checkbox" class="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
+                                    <label for="chkChiDinh" class="ml-3 block text-sm font-bold text-indigo-800">Chỉ định HLV thủ công (Admin)</label>
+                                </div>
+                                <div id="chi-dinh-dropdown-container" class="hidden">
+                                    <label for="hlvChiDinh" class="block text-sm font-medium text-gray-700">Chọn HLV Chỉ Định</label>
+                                    <select id="hlvChiDinh" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                        <option value="">-- Chọn HLV --</option>
+                                        </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-1 space-y-6">
+                            <div class="space-y-4 p-5 rounded-lg bg-gray-50 border border-gray-200">
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-500">Học Phí</span>
+                                    <span id="displayHocPhi" class="text-2xl font-bold text-indigo-600">0 VNĐ</span>
+                                </div>
+                                <div>
+                                    <span class="block text-sm font-medium text-gray-500">HLV Được Chia Tự Động</span>
+                                    <span id="displayHLV" class="text-lg font-semibold text-gray-800">-- Chờ --</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <button type="submit" id="ghi-danh-submit-button" class="w-full flex justify-center items-center gap-3 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                                    <span id="ghi-danh-spinner" class="loader-sm hidden"></span>
+                                    Ghi Danh
+                                </button>
+                                <button type="button" id="ghi-danh-reset-button" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+                                    Làm Mới Form
+                                </button>
+                                <button type="button" id="ghi-danh-print-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                                    In Phiếu
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="content-ql-hv" class="tab-panel">
+                    <h2 class="text-2xl font-semibold mb-6">Quản lý Học Viên</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="md:col-span-2">
+                            <label for="hv-search-input" class="block text-sm font-medium text-gray-700">Tìm kiếm (Tên, SĐT, Mã Thẻ)</label>
+                            <input type="search" id="hv-search-input" placeholder="Nhập từ khoá..." class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Lọc nhanh</label>
+                            <div class="mt-1 flex rounded-lg shadow-sm">
+                                <button id="filter-hv-thangnay" class="filter-hv-btn relative inline-flex items-center justify-center w-1/2 px-4 py-3 rounded-l-md border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                    HV Mới Tháng Này
+                                </button>
+                                <button id="filter-hv-tatca" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/2 px-4 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                    Tải Toàn Bộ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto rounded-lg shadow">
+                        <table class="min-w-full divide-y divide-gray-200 bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HBA Nhận</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Hoa Hồng</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuế</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Thực Nhận</th>
+                                    <th scope="col" class="relative px-6 py-3 admin-only">
+                                        <span class="sr-only">Hành động</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="hocvien-table-body" class="divide-y divide-gray-200">
+                                <tr><td colspan="10" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách học viên...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="content-ql-hlv" class="tab-panel">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold">Quản lý Huấn Luyện Viên</h2>
+                        <button id="add-hlv-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                            + Thêm HLV Mới
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto rounded-lg shadow">
+                        <table class="min-w-full divide-y divide-gray-200 bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca Dạy</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại HLV</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thứ tự Ưu tiên</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Đang Dạy</th>
+                                    <th scope="col" class="relative px-6 py-3">
+                                        <span class="sr-only">Hành động</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="hlv-table-body" class="divide-y divide-gray-200">
+                                <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách HLV...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="content-bao-cao" class="tab-panel">
+                    <h2 class="text-2xl font-semibold mb-6">Báo cáo Doanh thu</h2>
+                    <p>Nội dung cho Tab Báo cáo (Step 4)</p>
+                </div>
+
+                <div id="content-import" class="tab-panel">
+                    <h2 class="text-2xl font-semibold mb-6">Import Dữ liệu</h2>
+                    <p>Nội dung cho Tab Import (Step 4)</p>
+                </div>
+
+                <div id="content-cai-dat" class="tab-panel">
+                    <h2 class="text-2xl font-semibold mb-6">Cài Đặt Hệ Thống</h2>
+                    <div class="max-w-md space-y-4">
+                        <div>
+                            <label for="setting-rate-hba" class="block text-sm font-medium text-gray-700">Tỉ lệ HBA Nhận (%)</label>
+                            <input type="number" id="setting-rate-hba" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ví dụ: 30">
+                        </div>
+                        <div>
+                            <label for="setting-rate-tax" class="block text-sm font-medium text-gray-700">Thuế TNCN (%)</label>
+                            <input type="number" id="setting-rate-tax" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ví dụ: 10">
+                        </div>
+                        <button id="save-settings-button" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                            <span id="settings-spinner" class="loader-sm hidden"></span>
+                            Lưu Cài Đặt
+                        </button>
+                    </div>
+                </div>
+
+                <div id="content-goi-hoc" class="tab-panel">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold">Quản lý Gói Học</h2>
+                        <button id="add-goi-hoc-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                            + Thêm Gói Mới
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto rounded-lg shadow">
+                        <table class="min-w-full divide-y divide-gray-200 bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Gói Học</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số Buổi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Học Phí (VNĐ)</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời Hạn (Ngày)</th>
+                                    <th scope="col" class="relative px-6 py-3">
+                                        <span class="sr-only">Hành động</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="goi-hoc-table-body" class="divide-y divide-gray-200">
+                                <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách gói học...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl">
+            <h3 id="modal-title" class="text-xl font-semibold text-gray-900 mb-4">Thông báo</h3>
+            <p id="modal-message" class="text-gray-700 mb-6">Nội dung thông báo...</p>
+            <button id="modal-close-button" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                Đã Hiểu
+            </button>
+        </div>
+    </div>
+
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl">
+            <h3 class="text-xl font-semibold text-red-600 mb-4">Xác nhận Xoá</h3>
+            <p id="delete-message" class="text-gray-700 mb-6">Bạn có chắc chắn muốn xoá mục này không? Hành động này không thể hoàn tác.</p>
+            <div class="flex justify-end gap-4">
+                <button id="delete-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                    Huỷ
+                </button>
+                <button id="delete-confirm-button" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                    Xác nhận Xoá
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="goi-hoc-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-lg p-6 rounded-lg shadow-xl">
+            <h3 id="goi-hoc-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Thêm Gói Học Mới</h3>
+            <form id="goi-hoc-form" class="space-y-4">
+                <input type="hidden" id="goi-hoc-id">
+                <div>
+                    <label for="goi-hoc-ten" class="block text-sm font-medium text-gray-700">Tên Gói Học</label>
+                    <input type="text" id="goi-hoc-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="goi-hoc-so-buoi" class="block text-sm font-medium text-gray-700">Số Buổi</label>
+                    <input type="number" id="goi-hoc-so-buoi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="goi-hoc-hoc-phi" class="block text-sm font-medium text-gray-700">Học Phí (VNĐ)</label>
+                    <input type="number" id="goi-hoc-hoc-phi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="goi-hoc-thoi-han" class="block text-sm font-medium text-gray-700">Thời Hạn (Số ngày)</label>
+                    <input type="number" id="goi-hoc-thoi-han" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" id="goi-hoc-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                        Huỷ
+                    </button>
+                    <button type="submit" id="goi-hoc-save-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="hlv-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-lg p-6 rounded-lg shadow-xl">
+            <h3 id="hlv-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Thêm HLV Mới</h3>
+            <form id="hlv-form" class="space-y-4">
+                <input type="hidden" id="hlv-id">
+                <div>
+                    <label for="hlv-ten" class="block text-sm font-medium text-gray-700">Tên HLV</label>
+                    <input type="text" id="hlv-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="hlv-ca-day" class="block text-sm font-medium text-gray-700">Ca Dạy</M>
+                    <select id="hlv-ca-day" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        <option value="Sáng">Sáng</option>
+                        <option value="Chiều">Chiều</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="hlv-loai" class="block text-sm font-medium text-gray-700">Loại HLV</label>
+                    <select id="hlv-loai" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        <option value="Tự động">Tự động (Vào vòng quay)</option>
+                        <option value="Chỉ Định">Chỉ Định (Không vào vòng quay)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="hlv-uu-tien" class="block text-sm font-medium text-gray-700">Thứ tự ưu tiên (Số nhỏ ưu tiên cao)</label>
+                    <input type="number" id="hlv-uu-tien" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value="99">
+                </div>
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" id="hlv-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                        Huỷ
+                    </button>
+                    <button type="submit" id="hlv-save-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="hocvien-edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-2xl p-6 rounded-lg shadow-xl">
+            <h3 id="hocvien-edit-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Sửa Thông Tin Học Viên</h3>
+            <form id="hocvien-edit-form" class="space-y-4">
+                <input type="hidden" id="hocvien-edit-id">
+                <input type="hidden" id="hocvien-edit-thoi-han"> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="hocvien-edit-ten" class="block text-sm font-medium text-gray-700">Tên Học Viên</label>
+                        <input type="text" id="hocvien-edit-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="hocvien-edit-sdt" class="block text-sm font-medium text-gray-700">Số Điện Thoại</label>
+                        <input type="tel" id="hocvien-edit-sdt" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div>
+                        <label for="hocvien-edit-mathe" class="block text-sm font-medium text-gray-700">Mã Thẻ</label>
+                        <input type="text" id="hocvien-edit-mathe" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="hocvien-edit-phieuthu" class="block text-sm font-medium text-gray-700">Số Phiếu Thu</label>
+                        <input type="text" id="hocvien-edit-phieuthu" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="hocvien-edit-goihoc" class="block text-sm font-medium text-gray-700">Gói Học (Chỉ xem)</label>
+                        <input type="text" id="hocvien-edit-goihoc" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Chỉ xem)</label>
+                        <input type="text" id="hocvien-edit-hlv" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 pb-2 border-t border-b border-gray-200">
+                    <div>
+                        <label for="hocvien-edit-ngayghi" class="block text-sm font-medium text-gray-700">Ngày Ghi Danh (Có thể sửa)</label>
+                        <input type="date" id="hocvien-edit-ngayghi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-gray-500 mt-1">Sửa ngày này sẽ tự động tính lại ngày hết hạn.</p>
+                    </div>
+                    <div>
+                        <label for="hocvien-edit-ngayhet" class="block text-sm font-medium text-gray-700">Ngày Hết Hạn (Tự động)</label>
+                        <input type="date" id="hocvien-edit-ngayhet" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" id="hocvien-edit-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
+                        Huỷ
+                    </button>
+                    <button type="submit" id="hocvien-edit-save-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="print-section" class="hidden">
+        </div>
+
+
+    <script type="module" src="app.js"></script>
+    
+</body>
+</html>
