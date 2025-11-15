@@ -1229,7 +1229,7 @@ const updateQuickReport = () => {
     let doanhThuHomNay = 0;
     let doanhThuThangNay = 0;
     let soHVHomNay = 0;
-    let soHVThangNay = 0; // (SỬA LỖI 2)
+    let soHVThangNay = 0; // <-- (SỬA LỖI 2)
     let danhSachHVHomNayHTML = '';
     
     globalHocVienList.forEach((hv, index) => {
@@ -1250,7 +1250,7 @@ const updateQuickReport = () => {
         
         if (ngayGhiDanh >= startOfMonth) {
             doanhThuThangNay += hv.hocPhi;
-            soHVThangNay++; // (SỬA LỖI 2) Thêm dòng này
+            soHVThangNay++; // <-- (SỬA LỖI 2) Thêm dòng này
         }
     });
     
@@ -1258,7 +1258,7 @@ const updateQuickReport = () => {
     qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
     qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
     qrHvNgay.textContent = soHVHomNay;
-    qrHvThang.textContent = soHVThangNay; // (SỬA LỖI 2) Gán
+    qrHvThang.textContent = soHVThangNay; // <-- (SỬA LỖI 2) Gán
     
     // Cập nhật bảng
     if (soHVHomNay === 0) {
@@ -1534,6 +1534,9 @@ const renderHLVReport = (data, startDate, endDate) => {
 const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
     // Sắp xếp theo ngày ghi danh
     data.sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate());
+    
+    // (NÂNG CẤP) Tính tổng doanh thu
+    const totalRevenue = data.reduce((acc, hv) => acc + hv.hocPhi, 0);
 
     const html = `
         <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo Cáo Doanh Thu (Chi tiết)</h3>
@@ -1541,6 +1544,12 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
             Từ ngày: <span class="font-medium">${formatDateForDisplay(startDate)}</span> 
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
+        
+        <!-- (NÂNG CẤP) Thẻ Thống kê Tổng cộng -->
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
+            <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu (trong kỳ)</span>
+            <span class="text-2xl font-bold text-blue-900">${formatCurrency(totalRevenue)} VNĐ</span>
+        </div>
         
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
@@ -1551,7 +1560,8 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu</th>
+                        <!-- (NÂNG CẤP) Sửa tiêu đề cột -->
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -1564,6 +1574,7 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
+                                <!-- (NÂNG CẤP) Sửa cột -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hv.hocPhi)} VNĐ</td>
                             </tr>
                         `).join('')
@@ -1668,7 +1679,12 @@ const generateHLVReportPrintHTML = (data) => {
 const generateDoanhThuChiTietPrintHTML = (data) => {
     data.sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate());
     
+    // (NÂNG CẤP) Tính tổng
+    const totalRevenue = data.reduce((acc, hv) => acc + hv.hocPhi, 0);
+
     return `
+        <p style="font-size: 12pt; margin-bottom: 20px;"><strong>Tổng Doanh Thu:</strong> ${formatCurrency(totalRevenue)} VNĐ</p>
+        
         <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
             <thead style="background-color: #f3f4f6;">
                 <tr>
@@ -1677,7 +1693,7 @@ const generateDoanhThuChiTietPrintHTML = (data) => {
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Phụ Trách</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tổng Doanh Thu</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Doanh thu</th>
                 </tr>
             </thead>
             <tbody>
@@ -1698,8 +1714,8 @@ const generateDoanhThuChiTietPrintHTML = (data) => {
 
 // (SỬA LỖI IN TRANG TRẮNG)
 const handlePrintReport = () => {
-    if (currentReportData.length === 0 && currentReportType === 'tongquan') {
-        // Cho phép in báo cáo tổng quan rỗng
+    if (currentReportData.length === 0 && (currentReportType === 'tongquan' || currentReportType === 'doanhthu_chitiet')) {
+        // Cho phép in báo cáo tổng quan/chi tiết rỗng
     } else if (currentReportData.length === 0) {
         showModal("Không có dữ liệu để in.", "Lỗi");
         return;
@@ -1753,8 +1769,8 @@ reportPrintBtn.addEventListener('click', handlePrintReport);
 
 // --- (NÂNG CẤP) BƯỚC 5b: XUẤT EXCEL (Thêm cột Thuế) ---
 const handleExportExcel = () => {
-    if (currentReportData.length === 0 && currentReportType === 'tongquan') {
-        // Cho phép xuất báo cáo tổng quan rỗng
+    if (currentReportData.length === 0 && (currentReportType === 'tongquan' || currentReportType === 'doanhthu_chitiet')) {
+        // Cho phép xuất báo cáo tổng quan/chi tiết rỗng
     } else if (currentReportData.length === 0) {
         showModal("Không có dữ liệu để xuất Excel.", "Lỗi");
         return;
@@ -1823,11 +1839,15 @@ const handleExportExcel = () => {
         
         } else if (currentReportType === 'doanhthu_chitiet') { // (NÂNG CẤP)
             sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
+            
+            const totalRevenue = currentReportData.reduce((acc, hv) => acc + hv.hocPhi, 0);
+
             dataForSheet = [
                 ["BÁO CÁO DOANH THU (CHI TIẾT)"],
                 [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`],
+                ["Tổng Doanh Thu:", totalRevenue],
                 [], // Hàng trống
-                ["STT", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Tổng Doanh Thu"]
+                ["STT", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Doanh thu"]
             ];
             
             currentReportData
@@ -2053,7 +2073,7 @@ const handlePrintHVList = () => {
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || 'N/A'}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayGhiDanh)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHan)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHạn)}</td>
                         <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hlvThucNhan)}</td>
                     </tr>
                 `).join('')}
