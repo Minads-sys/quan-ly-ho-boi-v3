@@ -130,6 +130,7 @@ const tenHVInput = document.getElementById('tenHV');
 const sdtHVInput = document.getElementById('sdtHV');
 const maTheInput = document.getElementById('maThe');
 const soPhieuThuInput = document.getElementById('soPhieuThu');
+const hinhThucThanhToanSelect = document.getElementById('hinhThucThanhToan'); // (NÂNG CẤP)
 
 // (MỚI) Elements cho Tab Quản lý HV (Step 3b)
 const hocVienTableBody = document.getElementById('hocvien-table-body');
@@ -137,7 +138,7 @@ const hvSearchInput = document.getElementById('hv-search-input');
 const filterBtnThangNay = document.getElementById('filter-hv-thangnay');
 const filterBtnTatCa = document.getElementById('filter-hv-tatca');
 let currentHVFilter = 'thangnay'; // 'thangnay' or 'tatca'
-// (MỚI) Nâng cấp 2: Nút In/Xuất HV
+// (NÂNG CẤP) Nút In/Xuất HV
 const hvListPrintBtn = document.getElementById('hv-list-print-btn');
 const hvListExcelBtn = document.getElementById('hv-list-excel-btn');
 
@@ -152,6 +153,7 @@ const hocVienEditMaTheInput = document.getElementById('hocvien-edit-mathe');
 const hocVienEditPhieuThuInput = document.getElementById('hocvien-edit-phieuthu');
 const hocVienEditGoiHocInput = document.getElementById('hocvien-edit-goihoc');
 const hocVienEditHLVInput = document.getElementById('hocvien-edit-hlv'); // (Đã đổi thành <select>)
+const hocVienEditHTTTInput = document.getElementById('hocvien-edit-httt'); // (NÂNG CẤP)
 const hocVienEditNgayGhiInput = document.getElementById('hocvien-edit-ngayghi');
 const hocVienEditNgayHetInput = document.getElementById('hocvien-edit-ngayhet');
 const hocVienEditCancelButton = document.getElementById('hocvien-edit-cancel-button');
@@ -163,7 +165,7 @@ const printSection = document.getElementById('print-section');
 const qrDtNgay = document.getElementById('qr-dt-ngay');
 const qrDtThang = document.getElementById('qr-dt-thang');
 const qrHvNgay = document.getElementById('qr-hv-ngay');
-const qrHvTuan = document.getElementById('qr-hv-tuan');
+const qrHvThang = document.getElementById('qr-hv-thang'); // (NÂNG CẤP) Đổi từ Tuan sang Thang
 const qrHvTableBody = document.getElementById('qr-hv-table-body');
 
 // (MỚI) Elements cho Tab Báo Cáo (Step 4b)
@@ -217,6 +219,14 @@ const formatDateForDisplay = (date) => {
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const day = d.getDate().toString().padStart(2, '0');
     return `${day}/${month}/${year}`;
+};
+
+// (NÂNG CẤP) Hàm định dạng Ngày Giờ (cho phiếu in)
+const formatDateTimeForDisplay = (date) => {
+    if (!date) return 'N/A';
+    const d = (date instanceof Date) ? date : date.toDate();
+    const time = d.toLocaleTimeString('vi-VN'); // vd: 16:30:45
+    return `${formatDateForDisplay(d)} ${time}`;
 };
 
 // Hàm hiển thị Modal thông báo
@@ -861,6 +871,7 @@ ghiDanhForm.addEventListener('submit', async (e) => {
     const goiHocId = goiHocSelect.value;
     const caHoc = caHocSelect.value;
     const nhomTuoi = nhomTuoiSelect.value;
+    const hinhThucThanhToan = hinhThucThanhToanSelect.value; // (NÂNG CẤP) Lấy HTTT
 
     if (!tenHV || !sdtHV || !goiHocId) {
         showModal("Vui lòng điền đầy đủ thông tin bắt buộc (Tên, SĐT, Gói Học).", "Thiếu thông tin");
@@ -898,6 +909,7 @@ ghiDanhForm.addEventListener('submit', async (e) => {
 
         const hocVienData = {
             tenHV, sdtHV, nhomTuoi, caHoc,
+            hinhThucThanhToan, // (NÂNG CẤP) Lưu HTTT
             maThe: maTheInput.value.trim(),
             soPhieuThu: soPhieuThuInput.value.trim(),
             goiHocId: goiHocId,
@@ -941,7 +953,7 @@ const resetGhiDanhForm = () => {
 };
 ghiDanhResetButton.addEventListener('click', resetGhiDanhForm);
 
-// (SỬA LỖI IN TRANG TRẮNG & THÊM DỮ LIỆU) BƯỚC 3c
+// (NÂNG CẤP) BƯỚC 3c: IN PHIẾU
 const handlePrintPhieu = () => {
     if (!lastRegisteredHocVien) {
         showModal("Không có thông tin học viên để in. Vui lòng ghi danh trước.", "Lỗi");
@@ -949,8 +961,13 @@ const handlePrintPhieu = () => {
     }
     
     const hv = lastRegisteredHocVien;
+    const now = hv.ngayGhiDanh.toDate(); // Lấy thời gian đã lưu
+    const gioGhiDanh = now.getHours();
     
-    // (MỚI) Thêm Mã HV, Số Phiếu Thu, và 3 cột Chữ ký
+    // (NÂNG CẤP) Xác định ca
+    const nguoiLapPhieu = gioGhiDanh < 12 ? "Lễ tân ca sáng" : "Lễ tân ca chiều";
+    
+    // Tạo nội dung HTML cho phiếu in
     const printContent = `
         <div id="print-header">
             <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
@@ -958,9 +975,11 @@ const handlePrintPhieu = () => {
         </div>
         <h2 id="print-title">PHIẾU GHI DANH HỌC BƠI</h2>
         <div id="print-details">
-            <p><strong>Ngày ghi danh:</strong> ${formatDateForDisplay(hv.ngayGhiDanh)}</p>
+            <p><strong>Ngày giờ ghi danh:</strong> ${formatDateTimeForDisplay(hv.ngayGhiDanh)}</p>
             <p><strong>Mã HV:</strong> ${hv.id.substring(0, 10).toUpperCase()}</p>
             <p><strong>Số phiếu thu:</strong> ${hv.soPhieuThu || 'N/A'}</p>
+            <p><strong>Hình thức TT:</strong> ${hv.hinhThucThanhToan || 'N/A'}</p>
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
             <p><strong>Họ tên học viên:</strong> ${hv.tenHV}</p>
             <p><strong>Số điện thoại:</strong> ${hv.sdtHV}</p>
             <p><strong>Gói học:</strong> ${hv.tenGoiHoc} (${hv.soBuoi} buổi)</p>
@@ -978,7 +997,7 @@ const handlePrintPhieu = () => {
                 <p>(Ký, họ tên)</p>
             </div>
             <div class="signature-box">
-                <p><strong>Người lập phiếu</strong></p>
+                <p><strong>${nguoiLapPhieu}</strong></p>
                 <p>(Ký, họ tên)</p>
             </div>
         </div>
@@ -1101,7 +1120,7 @@ hocVienTableBody.addEventListener('click', (e) => {
     }
 });
 
-// (NÂNG CẤP) Hàm mở Modal Sửa Học Viên (Thêm nạp HLV)
+// (NÂNG CẤP) Hàm mở Modal Sửa Học Viên (Thêm nạp HLV & HTTT)
 const openHocVienEditModal = (hocvien) => {
     hocVienEditForm.reset();
     hocVienEditIdInput.value = hocvien.id;
@@ -1112,6 +1131,9 @@ const openHocVienEditModal = (hocvien) => {
     hocVienEditMaTheInput.value = hocvien.maThe || '';
     hocVienEditPhieuThuInput.value = hocvien.soPhieuThu || '';
     hocVienEditGoiHocInput.value = hocvien.tenGoiHoc;
+    
+    // (NÂNG CẤP) Nạp Hình thức thanh toán
+    hocVienEditHTTTInput.value = hocvien.hinhThucThanhToan || 'Tiền mặt'; // Mặc định là Tiền mặt nếu chưa có
     
     // (NÂNG CẤP) Nạp danh sách HLV vào dropdown
     hocVienEditHLVInput.innerHTML = ''; // Xoá các HLV cũ
@@ -1155,7 +1177,7 @@ hocVienEditNgayGhiInput.addEventListener('change', () => {
     }
 });
 
-// (NÂNG CẤP) Xử lý Lưu Học Viên (Thêm lưu HLV)
+// (NÂNG CẤP) Xử lý Lưu Học Viên (Thêm lưu HLV & HTTT)
 hocVienEditForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -1179,6 +1201,7 @@ hocVienEditForm.addEventListener('submit', async (e) => {
             sdtHV: hocVienEditSdtInput.value.trim(),
             maThe: hocVienEditMaTheInput.value.trim(),
             soPhieuThu: hocVienEditPhieuThuInput.value.trim(),
+            hinhThucThanhToan: hocVienEditHTTTInput.value, // <-- Dòng mới
             ngayGhiDanh: Timestamp.fromDate(ngayGhiDanhMoi),
             ngayHetHan: Timestamp.fromDate(ngayHetHanMoi),
             hlvId: newHlvId,   // <-- Dòng mới
@@ -1197,23 +1220,16 @@ hocVienEditForm.addEventListener('submit', async (e) => {
 });
 
 
-// --- (MỚI) NGHIỆP VỤ BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN ---
+// --- (NÂNG CẤP) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN (Đổi Tuần -> Tháng) ---
 const updateQuickReport = () => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Tìm ngày Thứ Hai của tuần hiện tại
-    const dayOfWeek = now.getDay(); // 0 = CN, 1 = T2, ...
-    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Lùi về T2
-    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diff);
-    startOfWeek.setHours(0,0,0,0);
-
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     let doanhThuHomNay = 0;
     let doanhThuThangNay = 0;
     let soHVHomNay = 0;
-    let soHVTuanNay = 0;
+    let soHVThangNay = 0; // <-- (NÂNG CẤP) Đổi tên biến
     let danhSachHVHomNayHTML = '';
     
     globalHocVienList.forEach((hv, index) => {
@@ -1232,12 +1248,9 @@ const updateQuickReport = () => {
             `;
         }
         
-        if (ngayGhiDanh >= startOfWeek) {
-            soHVTuanNay++;
-        }
-        
         if (ngayGhiDanh >= startOfMonth) {
             doanhThuThangNay += hv.hocPhi;
+            soHVThangNay++; // <-- (NÂNG CẤP) Đếm
         }
     });
     
@@ -1245,7 +1258,7 @@ const updateQuickReport = () => {
     qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
     qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
     qrHvNgay.textContent = soHVHomNay;
-    qrHvTuan.textContent = soHVTuanNay;
+    qrHvThang.textContent = soHVThangNay; // <-- (NÂNG CẤP) Gán
     
     // Cập nhật bảng
     if (soHVHomNay === 0) {
@@ -1391,7 +1404,6 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
-        <!-- Thẻ thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
@@ -1407,7 +1419,6 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             </div>
         </div>
         
-        <!-- Bảng chi tiết Tổng quan -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1483,7 +1494,6 @@ const renderHLVReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
-        <!-- Bảng chi tiết Thu nhập HLV -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1699,11 +1709,11 @@ const handleExportExcel = () => {
             currentReportData.forEach(hv => {
                 if (!hv.hlvId) return;
                 if (!reportByHLV[hv.hlvId]) {
-                    reportByHLV[hv.hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 };
+                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 };
                 }
-                reportByHLV[hv.hlvId].soHVMoi++;
-                reportByHLV[hv.hlvId].tongDoanhThu += hv.hocPhi;
-                reportByHLV[hv.hlvId].tongThue += hv.thue;
+                reportByHLV[hlvId].soHVMoi++;
+                reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+                reportByHLV[hlvId].tongThue += hv.thue;
                 reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
@@ -1752,7 +1762,7 @@ const handleExportExcel = () => {
 reportExcelBtn.addEventListener('click', handleExportExcel);
 
 
-// --- (NÂNG CẤP) BƯỚC 5c: IMPORT DỮ LIỆU ---
+// --- (MỚI) BƯỚC 5c: IMPORT DỮ LIỆU ---
 const handleImportStart = () => {
     const file = importFileInput.files[0];
     if (!file) {
@@ -1853,6 +1863,7 @@ const handleImportStart = () => {
                     caHoc: caDay,
                     maThe: '',
                     soPhieuThu: `Import ${formatDateForDisplay(today)}`,
+                    hinhThucThanhToan: 'N/A', // (NÂNG CẤP)
                     goiHocId: goiHoc.id,
                     tenGoiHoc: goiHoc.tenGoi,
                     soBuoi: goiHoc.soBuoi,
@@ -1919,9 +1930,8 @@ const handlePrintHVList = () => {
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Doanh Thu</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HBA Nhận</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Thuế</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Ngày Ghi Danh</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Ngày Hết Hạn</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Net</th>
                 </tr>
             </thead>
@@ -1932,9 +1942,8 @@ const handlePrintHVList = () => {
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || 'N/A'}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hocPhi)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hbaNhan)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.thue)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayGhiDanh)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHan)}</td>
                         <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hlvThucNhan)}</td>
                     </tr>
                 `).join('')}
