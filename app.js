@@ -744,7 +744,7 @@ const loadHocVien = () => {
         
         updateHLVCounters();
         applyHocVienFilterAndRender();
-        updateQuickReport(); // (MỚI) Step 4a
+        updateQuickReport(); // (SỬA LỖI 1) Gọi hàm này
     }, (error) => {
         console.error("Lỗi khi tải học viên:", error);
         showModal(`Không thể tải danh sách học viên: ${error.message}`, "Lỗi");
@@ -1220,7 +1220,7 @@ hocVienEditForm.addEventListener('submit', async (e) => {
 });
 
 
-// --- (NÂNG CẤP) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN (Đổi Tuần -> Tháng) ---
+// --- (SỬA LỖI) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN ---
 const updateQuickReport = () => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1229,7 +1229,7 @@ const updateQuickReport = () => {
     let doanhThuHomNay = 0;
     let doanhThuThangNay = 0;
     let soHVHomNay = 0;
-    let soHVThangNay = 0; // <-- (SỬA LỖI) Đổi tên biến
+    let soHVThangNay = 0; // <-- (SỬA LỖI 2)
     let danhSachHVHomNayHTML = '';
     
     globalHocVienList.forEach((hv, index) => {
@@ -1250,7 +1250,7 @@ const updateQuickReport = () => {
         
         if (ngayGhiDanh >= startOfMonth) {
             doanhThuThangNay += hv.hocPhi;
-            soHVThangNay++; // <-- (SỬA LỖI) Thêm dòng này
+            soHVThangNay++; // <-- (SỬA LỖI 2) Thêm dòng này
         }
     });
     
@@ -1258,7 +1258,7 @@ const updateQuickReport = () => {
     qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
     qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
     qrHvNgay.textContent = soHVHomNay;
-    qrHvThang.textContent = soHVThangNay; // <-- (SỬA LỖI) Gán
+    qrHvThang.textContent = soHVThangNay; // <-- (SỬA LỖI 2) Gán
     
     // Cập nhật bảng
     if (soHVHomNay === 0) {
@@ -1315,7 +1315,7 @@ reportQuickFilterBtns.forEach(btn => {
         
         // Active nút được click
         targetBtn.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-        targetBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-1D00', 'hover:text-indigo-700');
+        targetBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
         
         const filterType = targetBtn.id.replace('report-filter-', '');
         
@@ -1362,8 +1362,9 @@ const generateReport = () => {
         if (reportType === 'tongquan') {
             renderTongQuanReport(filteredData, startDate, endDate);
         } else if (reportType === 'hlv') {
-            // (MỚI) Bước 4c: Gọi hàm render Báo cáo HLV
             renderHLVReport(filteredData, startDate, endDate);
+        } else if (reportType === 'doanhthu_chitiet') { // (NÂNG CẤP)
+            renderDoanhThuChiTietReport(filteredData, startDate, endDate);
         }
         
         reportPrintBtn.disabled = false;
@@ -1529,6 +1530,52 @@ const renderHLVReport = (data, startDate, endDate) => {
     reportResultsContainer.innerHTML = html;
 };
 
+// --- (NÂNG CẤP) HÀM MỚI: BÁO CÁO DOANH THU CHI TIẾT ---
+const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
+    // Sắp xếp theo ngày ghi danh
+    data.sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate());
+
+    const html = `
+        <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo Cáo Doanh Thu (Chi tiết)</h3>
+        <p class="text-sm text-gray-600 mb-4">
+            Từ ngày: <span class="font-medium">${formatDateForDisplay(startDate)}</span> 
+            Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
+        </p>
+        
+        <div class="overflow-x-auto rounded-lg shadow">
+            <table class="min-w-full divide-y divide-gray-200 bg-white">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    ${data.length === 0 
+                        ? `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>`
+                        : data.map((hv, index) => `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${index + 1}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hv.hocPhi)} VNĐ</td>
+                            </tr>
+                        `).join('')
+                    }
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    reportResultsContainer.innerHTML = html;
+};
+
 // --- (MỚI) BƯỚC 4d: IN BÁO CÁO ---
 
 // Hàm tạo HTML cho Báo cáo Tổng quan (bản in)
@@ -1616,6 +1663,38 @@ const generateHLVReportPrintHTML = (data) => {
     `;
 };
 
+// (NÂNG CẤP) Hàm tạo HTML cho Báo cáo Doanh thu Chi tiết (bản in)
+const generateDoanhThuChiTietPrintHTML = (data) => {
+    data.sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate());
+    
+    return `
+        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">STT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tên Học Viên</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Phụ Trách</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tổng Doanh Thu</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map((hv, index) => `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hocPhi)} VNĐ</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+};
+
 // (SỬA LỖI IN TRANG TRẮNG)
 const handlePrintReport = () => {
     if (currentReportData.length === 0 && currentReportType === 'tongquan') {
@@ -1635,6 +1714,9 @@ const handlePrintReport = () => {
     } else if (currentReportType === 'hlv') {
         title = "BÁO CÁO THU NHẬP HUẤN LUYỆN VIÊN";
         tableHTML = generateHLVReportPrintHTML(currentReportData);
+    } else if (currentReportType === 'doanhthu_chitiet') { // (NÂNG CẤP)
+        title = "BÁO CÁO DOANH THU (CHI TIẾT)";
+        tableHTML = generateDoanhThuChiTietPrintHTML(currentReportData);
     }
 
     const dateRangeHTML = `
@@ -1737,6 +1819,28 @@ const handleExportExcel = () => {
                     hlv.tongThucNhan
                 ]);
             });
+        
+        } else if (currentReportType === 'doanhthu_chitiet') { // (NÂNG CẤP)
+            sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
+            dataForSheet = [
+                ["BÁO CÁO DOANH THU (CHI TIẾT)"],
+                [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`],
+                [], // Hàng trống
+                ["STT", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Tổng Doanh Thu"]
+            ];
+            
+            currentReportData
+                .sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate())
+                .forEach((hv, index) => {
+                    dataForSheet.push([
+                        index + 1,
+                        hv.tenHV,
+                        hv.sdtHV,
+                        hv.tenHLV,
+                        hv.tenGoiHoc,
+                        hv.hocPhi
+                    ]);
+                });
         }
 
         // Tạo workbook và worksheet
@@ -1748,6 +1852,8 @@ const handleExportExcel = () => {
             ws['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 30 } ]; // (NÂNG CẤP) Thêm độ rộng cột Thuế
         } else if (currentReportType === 'tongquan') {
             ws['!cols'] = [ { wch: 30 }, { wch: 25 } ];
+        } else if (currentReportType === 'doanhthu_chitiet') { // (NÂNG CẤP)
+            ws['!cols'] = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 } ];
         }
 
         // Thêm worksheet vào workbook
