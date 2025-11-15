@@ -1229,7 +1229,7 @@ const updateQuickReport = () => {
     let doanhThuHomNay = 0;
     let doanhThuThangNay = 0;
     let soHVHomNay = 0;
-    let soHVThangNay = 0; // <-- (SỬA LỖI 2)
+    let soHVThangNay = 0; // (SỬA LỖI 2)
     let danhSachHVHomNayHTML = '';
     
     globalHocVienList.forEach((hv, index) => {
@@ -1250,7 +1250,7 @@ const updateQuickReport = () => {
         
         if (ngayGhiDanh >= startOfMonth) {
             doanhThuThangNay += hv.hocPhi;
-            soHVThangNay++; // <-- (SỬA LỖI 2) Thêm dòng này
+            soHVThangNay++; // (SỬA LỖI 2) Thêm dòng này
         }
     });
     
@@ -1258,7 +1258,7 @@ const updateQuickReport = () => {
     qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
     qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
     qrHvNgay.textContent = soHVHomNay;
-    qrHvThang.textContent = soHVThangNay; // <-- (SỬA LỖI 2) Gán
+    qrHvThang.textContent = soHVThangNay; // (SỬA LỖI 2) Gán
     
     // Cập nhật bảng
     if (soHVHomNay === 0) {
@@ -1575,6 +1575,7 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
     
     reportResultsContainer.innerHTML = html;
 };
+
 
 // --- (MỚI) BƯỚC 4d: IN BÁO CÁO ---
 
