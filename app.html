@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Ghi danh Hồ bơi HBA Q6</title>
+    <title>Quản lý Hồ bơi HBA V3</title>
     <!-- Tích hợp Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tùy chỉnh font Inter -->
@@ -22,7 +22,7 @@
     <!-- 2. Màn hình Đăng nhập (Mặc định hiển thị) -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center hidden">
         <div class="bg-white p-8 sm:p-10 rounded-xl shadow-lg w-full max-w-md">
-            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Đăng nhập Hồ bơi HBA Q6</h2>
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Đăng nhập HBA V3</h2>
             <form id="login-form" class="space-y-6">
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -51,7 +51,7 @@
                 <div class="flex justify-between items-center h-16">
                     <!-- Logo/Title -->
                     <div class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold text-indigo-600">Ghi danh Hồ bơi HBA Q6</span>
+                        <span class="text-2xl font-bold text-indigo-600">HBA V3</span>
                     </div>
                     
                     <!-- User Info & Logout -->
@@ -153,12 +153,22 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <label for="goiHoc" class="block text-sm font-medium text-gray-700">Gói Học <span class="text-red-500">*</span></label>
-                                <select id="goiHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                    <option value="">-- Chọn gói học --</option>
-                                    <!-- Nạp bằng JS -->
-                                </select>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="goiHoc" class="block text-sm font-medium text-gray-700">Gói Học <span class="text-red-500">*</span></label>
+                                    <select id="goiHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                        <option value="">-- Chọn gói học --</option>
+                                        <!-- Nạp bằng JS -->
+                                    </select>
+                                </div>
+                                <!-- (NÂNG CẤP) Thêm Hình thức thanh toán -->
+                                <div>
+                                    <label for="hinhThucThanhToan" class="block text-sm font-medium text-gray-700">Hình thức thanh toán <span class="text-red-500">*</span></label>
+                                    <select id="hinhThucThanhToan" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                        <option value="Tiền mặt">Tiền mặt</option>
+                                        <option value="Chuyển khoản">Chuyển khoản</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <!-- Chỉ định HLV (Admin only) -->
@@ -209,7 +219,7 @@
 
                     <!-- (MỚI) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN -->
                     <div id="quick-report-section" class="mt-12 border-t pt-8">
-                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo cáo nhanh</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo cáo nhanh (Real-time)</h3>
                         
                         <!-- 4 Thẻ thống kê -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -228,10 +238,10 @@
                                 <span class="block text-sm font-medium text-yellow-700">HV mới hôm nay</span>
                                 <span id="qr-hv-ngay" class="text-2xl font-bold text-yellow-900">0</span>
                             </div>
-                            <!-- Card 4: HV Mới Tuần Này -->
+                            <!-- (NÂNG CẤP) Card 4: Đổi từ Tuần sang Tháng -->
                             <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
-                                <span class="block text-sm font-medium text-indigo-700">HV mới tuần này</span>
-                                <span id="qr-hv-tuan" class="text-2xl font-bold text-indigo-900">0</span>
+                                <span class="block text-sm font-medium text-indigo-700">HV mới tháng này</span>
+                                <span id="qr-hv-thang" class="text-2xl font-bold text-indigo-900">0</span>
                             </div>
                         </div>
                         
@@ -260,7 +270,7 @@
                 <!-- Nội dung Tab 2: Quản lý HV (Step 3b) -->
                 <!-- =================================== -->
                 <div id="content-ql-hv" class="tab-panel">
-                    <!-- (MỚI) Thêm 2 nút In/Xuất và bọc title bằng flexbox -->
+                    <!-- (NÂNG CẤP) Thêm 2 nút In/Xuất -->
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-semibold">Quản lý Học Viên</h2>
                         <div class="flex gap-2">
@@ -282,11 +292,11 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Lọc nhanh</label>
                             <div class="mt-1 flex rounded-lg shadow-sm">
-                                <!-- (MỚI) Sửa hover cho nút active -->
+                                <!-- (SỬA LỖI HOVER) -->
                                 <button id="filter-hv-thangnay" class="filter-hv-btn relative inline-flex items-center justify-center w-1/2 px-4 py-3 rounded-l-md border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 hover:bg-indigo-700">
                                     HV Mới Tháng Này
                                 </button>
-                                <!-- (MỚI) Sửa hover cho nút inactive -->
+                                <!-- (SỬA LỖI HOVER) -->
                                 <button id="filter-hv-tatca" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/2 px-4 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
                                     Tải Toàn Bộ
                                 </button>
@@ -387,15 +397,15 @@
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Lọc nhanh theo thời gian</label>
                                 <div class="mt-1 flex rounded-lg shadow-sm">
-                                    <!-- (MỚI) Sửa hover cho nút inactive -->
+                                    <!-- (SỬA LỖI HOVER) -->
                                     <button id="report-filter-today" class="report-quick-filter-btn relative inline-flex items-center justify-center w-1/3 px-4 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
                                         Hôm nay
                                     </button>
-                                    <!-- (MỚI) Sửa hover cho nút active -->
+                                    <!-- (SỬA LỖI HOVER) -->
                                     <button id="report-filter-this-month" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/3 px-4 py-3 border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none hover:bg-indigo-700">
                                         Tháng này
                                     </button>
-                                    <!-- (MỚI) Sửa hover cho nút inactive -->
+                                    <!-- (SỬA LỖI HOVER) -->
                                     <button id="report-filter-last-month" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/3 px-4 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
                                         Tháng trước
                                     </button>
@@ -664,18 +674,30 @@
                     </div>
                 </div>
 
+                <!-- (NÂNG CẤP) Thêm Hình thức thanh toán -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="hocvien-edit-httt" class="block text-sm font-medium text-gray-700">Hình thức thanh toán</label>
+                        <select id="hocvien-edit-httt" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                            <option value="Tiền mặt">Tiền mặt</option>
+                            <option value="Chuyển khoản">Chuyển khoản</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="hocvien-edit-goihoc" class="block text-sm font-medium text-gray-700">Gói Học (Chỉ xem)</label>
                         <input type="text" id="hocvien-edit-goihoc" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
                     </div>
+                    <!-- (NÂNG CẤP) Đổi HLV từ Input sang Select -->
                     <div>
-                    <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Có thể sửa)</label>
-                    <select id="hocvien-edit-hlv" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                        <!-- Danh sách HLV sẽ được app.js nạp vào đây -->
-                        <option value="">-- Đang tải danh sách HLV --</option>
-                    </select>
-                </div>
+                        <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Có thể sửa)</label>
+                        <select id="hocvien-edit-hlv" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                            <!-- Danh sách HLV sẽ được app.js nạp vào đây -->
+                            <option value="">-- Đang tải danh sách HLV --</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 pb-2 border-t border-b border-gray-200">
@@ -715,5 +737,3 @@
     
 </body>
 </html>
-
-
