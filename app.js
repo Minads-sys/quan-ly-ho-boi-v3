@@ -1229,7 +1229,7 @@ const updateQuickReport = () => {
     let doanhThuHomNay = 0;
     let doanhThuThangNay = 0;
     let soHVHomNay = 0;
-    let soHVThangNay = 0; // <-- (NÂNG CẤP) Đổi tên biến
+    let soHVThangNay = 0; // <-- (SỬA LỖI) Đổi tên biến
     let danhSachHVHomNayHTML = '';
     
     globalHocVienList.forEach((hv, index) => {
@@ -1250,7 +1250,7 @@ const updateQuickReport = () => {
         
         if (ngayGhiDanh >= startOfMonth) {
             doanhThuThangNay += hv.hocPhi;
-            soHVThangNay++; // <-- (NÂNG CẤP) Đếm
+            soHVThangNay++; // <-- (SỬA LỖI) Thêm dòng này
         }
     });
     
@@ -1258,7 +1258,7 @@ const updateQuickReport = () => {
     qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
     qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
     qrHvNgay.textContent = soHVHomNay;
-    qrHvThang.textContent = soHVThangNay; // <-- (NÂNG CẤP) Gán
+    qrHvThang.textContent = soHVThangNay; // <-- (SỬA LỖI) Gán
     
     // Cập nhật bảng
     if (soHVHomNay === 0) {
@@ -1315,7 +1315,7 @@ reportQuickFilterBtns.forEach(btn => {
         
         // Active nút được click
         targetBtn.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-        targetBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+        targetBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-1D00', 'hover:text-indigo-700');
         
         const filterType = targetBtn.id.replace('report-filter-', '');
         
@@ -1404,6 +1404,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- Thẻ thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
@@ -1419,6 +1420,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             </div>
         </div>
         
+        <!-- Bảng chi tiết Tổng quan -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1494,6 +1496,7 @@ const renderHLVReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- Bảng chi tiết Thu nhập HLV -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
