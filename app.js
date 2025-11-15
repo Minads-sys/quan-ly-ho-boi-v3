@@ -174,6 +174,7 @@ const reportQuickFilterBtns = document.querySelectorAll('.report-quick-filter-bt
 const reportFilterToday = document.getElementById('report-filter-today');
 const reportFilterThisMonth = document.getElementById('report-filter-this-month');
 const reportFilterLastMonth = document.getElementById('report-filter-last-month');
+const reportFilterCustom = document.getElementById('report-filter-custom'); // (NÂNG CẤP)
 const reportViewBtn = document.getElementById('report-view-btn');
 const reportSpinner = document.getElementById('report-spinner');
 const reportStartDateInput = document.getElementById('report-start-date');
@@ -1302,7 +1303,7 @@ const setupReportTabDefaults = () => {
     reportEndDateInput.value = formatDateForInput(endDate);
 };
 
-// (SỬA LỖI HOVER)
+// (NÂNG CẤP) Xử lý 4 nút lọc nhanh
 reportQuickFilterBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
         const targetBtn = e.currentTarget;
@@ -1320,8 +1321,10 @@ reportQuickFilterBtns.forEach(btn => {
         const filterType = targetBtn.id.replace('report-filter-', '');
         
         if (filterType === 'custom') {
+            // Hiển thị ô chọn ngày
             reportDateRangeContainer.classList.remove('hidden');
         } else {
+            // Ẩn ô chọn ngày và tự động điền
             reportDateRangeContainer.classList.add('hidden');
             const { startDate, endDate } = getReportDateRange(filterType);
             reportStartDateInput.value = formatDateForInput(startDate);
@@ -1329,7 +1332,7 @@ reportQuickFilterBtns.forEach(btn => {
         }
     });
 });
-// (Chúng ta có thể thêm logic cho "Lọc tùy chỉnh" sau)
+
 
 // Hàm chính: Xử lý nút "Xem Báo Cáo"
 const generateReport = () => {
@@ -1340,10 +1343,17 @@ const generateReport = () => {
     
     try {
         const reportType = reportTypeSelect.value;
-        const startDate = new Date(reportStartDateInput.value);
-        const endDate = new Date(reportEndDateInput.value);
-        endDate.setHours(23, 59, 59); // Đảm bảo bao trọn ngày
+        
+        // (NÂNG CẤP) Kiểm tra xem có phải lọc custom không
+        let filterType = 'custom'; // Mặc định là custom
+        reportQuickFilterBtns.forEach(btn => {
+            if (btn.classList.contains('bg-indigo-600')) {
+                filterType = btn.id.replace('report-filter-', '');
+            }
+        });
 
+        const { startDate, endDate } = getReportDateRange(filterType);
+        
         if (isNaN(startDate) || isNaN(endDate)) {
             throw new Error("Ngày bắt đầu hoặc ngày kết thúc không hợp lệ.");
         }
@@ -1405,7 +1415,6 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
-        <!-- Thẻ thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
@@ -1421,7 +1430,6 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             </div>
         </div>
         
-        <!-- Bảng chi tiết Tổng quan -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1497,7 +1505,6 @@ const renderHLVReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
-        <!-- Bảng chi tiết Thu nhập HLV -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1535,7 +1542,7 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
     // Sắp xếp theo ngày ghi danh
     data.sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate());
     
-    // (NÂNG CẤP) Tính tổng doanh thu
+    // (NÂNG CẤP) Tính tổng
     const totalRevenue = data.reduce((acc, hv) => acc + hv.hocPhi, 0);
 
     const html = `
@@ -1545,7 +1552,6 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
-        <!-- (NÂNG CẤP) Thẻ Thống kê Tổng cộng -->
         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
             <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu (trong kỳ)</span>
             <span class="text-2xl font-bold text-blue-900">${formatCurrency(totalRevenue)} VNĐ</span>
@@ -1560,7 +1566,6 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
-                        <!-- (NÂNG CẤP) Sửa tiêu đề cột -->
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
                     </tr>
                 </thead>
@@ -1574,7 +1579,6 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
-                                <!-- (NÂNG CẤP) Sửa cột -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hv.hocPhi)} VNĐ</td>
                             </tr>
                         `).join('')
@@ -2073,7 +2077,7 @@ const handlePrintHVList = () => {
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || 'N/A'}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayGhiDanh)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHạn)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHan)}</td>
                         <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hlvThucNhan)}</td>
                     </tr>
                 `).join('')}
