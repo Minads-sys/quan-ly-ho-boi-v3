@@ -124,7 +124,7 @@ input[type=number] {
         display: inline-block;
     }
     
-    /* (MỚI) Style cho 3 cột chữ ký */
+    /* (NÂNG CẤP) Style cho 3 cột chữ ký */
     #print-signatures {
         display: flex;
         justify-content: space-around;
@@ -141,6 +141,26 @@ input[type=number] {
         margin-top: 80px; /* Tạo khoảng trống để ký */
         font-style: italic;
     }
+    /* Tùy chỉnh cho Báo cáo (để bảng không bị vỡ) */
+    #print-section table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10pt; /* Giảm cỡ chữ cho bảng báo cáo */
+    }
+    #print-section th, #print-section td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    #print-section thead {
+        background-color: #f3f4f6;
+    }
+    /* Tùy chỉnh cho Báo cáo HLV (bản in) */
+    #print-section #hlv-report-table th, 
+    #print-section #hlv-report-table td {
+        font-size: 10pt; /* Cỡ chữ nhỏ hơn cho bảng HLV */
+    }
+
 
     /* Ẩn nút In trên bản in */
     .no-print {
