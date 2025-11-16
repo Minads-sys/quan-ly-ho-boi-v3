@@ -69,6 +69,12 @@ input[type=number] {
 
 /* --- CSS CHUNG CHO IN ẤN --- */
 @media print {
+    /* (MỚI) Gợi ý trình duyệt dùng khổ A4 Dọc */
+    @page {
+        size: A4 portrait;
+        margin: 20mm; /* Thêm lề cho trang in */
+    }
+    
     /* Ẩn mọi thứ không cần thiết */
     body.printing * {
         visibility: hidden;
@@ -84,7 +90,7 @@ input[type=number] {
         top: 0;
         width: 100%;
         margin: 0;
-        padding: 20px;
+        padding: 0; /* (SỬA) Bỏ padding của section */
         font-family: 'Times New Roman', Times, serif;
         color: #000;
     }
@@ -156,10 +162,18 @@ input[type=number] {
     #print-section thead {
         background-color: #f3f4f6;
     }
+    
+    /* (MỚI) Thu nhỏ bảng Daily Report 9 cột để vừa A4 Dọc */
+    #print-section #qr-hv-table-body th,
+    #print-section #qr-hv-table-body td {
+        font-size: 9pt; /* Làm chữ nhỏ hơn nữa */
+        padding: 4px;   /* Giảm padding */
+        word-break: break-all; /* Bẻ gãy chữ nếu cần */
+    }
 
     /* (MỚI) Style cho Thống kê Daily Report (Tiền mặt/CK) */
     #print-qr-summary {
-        margin-top: 20px;
+        margin-top: 15px; /* (SỬA) Giảm lề */
         font-size: 12pt;
     }
     #print-qr-summary p {
@@ -171,4 +185,3 @@ input[type=number] {
         display: none !important;
     }
 }
-
