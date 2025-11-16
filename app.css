@@ -67,7 +67,7 @@ input[type=number] {
     -moz-appearance: textfield;
 }
 
-/* --- CSS CHO VIỆC IN PHIẾU (Bước 3c) --- */
+/* --- CSS CHUNG CHO IN ẤN --- */
 @media print {
     /* Ẩn mọi thứ không cần thiết */
     body.printing * {
@@ -124,8 +124,8 @@ input[type=number] {
         display: inline-block;
     }
     
-    /* (MỚI) Style cho 3 cột chữ ký */
-    #print-signatures {
+    /* (MỚI) Style cho chữ ký (Dùng chung cho Phiếu Ghi Danh & Daily Report) */
+    #print-signatures, #print-qr-signatures {
         display: flex;
         justify-content: space-around;
         margin-top: 40px; /* (SỬA) Giảm lề */
@@ -141,6 +141,7 @@ input[type=number] {
         margin-top: 40px; /* (SỬA) Giảm khoảng trống ký */
         font-style: italic;
     }
+
     /* Tùy chỉnh cho Báo cáo (để bảng không bị vỡ) */
     #print-section table {
         width: 100%;
@@ -155,12 +156,15 @@ input[type=number] {
     #print-section thead {
         background-color: #f3f4f6;
     }
-    /* Tùy chỉnh cho Báo cáo HLV (bản in) */
-    #print-section #hlv-report-table th, 
-    #print-section #hlv-report-table td {
-        font-size: 10pt; /* Cỡ chữ nhỏ hơn cho bảng HLV */
-    }
 
+    /* (MỚI) Style cho Thống kê Daily Report (Tiền mặt/CK) */
+    #print-qr-summary {
+        margin-top: 20px;
+        font-size: 12pt;
+    }
+    #print-qr-summary p {
+        margin-bottom: 5px;
+    }
 
     /* Ẩn nút In trên bản in */
     .no-print {
