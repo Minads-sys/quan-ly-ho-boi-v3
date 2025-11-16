@@ -135,9 +135,10 @@ const hinhThucThanhToanSelect = document.getElementById('hinhThucThanhToan'); //
 // (MỚI) Elements cho Tab Quản lý HV (Step 3b)
 const hocVienTableBody = document.getElementById('hocvien-table-body');
 const hvSearchInput = document.getElementById('hv-search-input');
+const filterBtnHomNay = document.getElementById('filter-hv-today'); // (NÂNG CẤP 3b)
 const filterBtnThangNay = document.getElementById('filter-hv-thangnay');
 const filterBtnTatCa = document.getElementById('filter-hv-tatca');
-let currentHVFilter = 'thangnay'; // 'thangnay' or 'tatca'
+let currentHVFilter = 'thangnay'; // 'thangnay', 'tatca', 'today'
 // (NÂNG CẤP) Nút In/Xuất HV
 const hvListPrintBtn = document.getElementById('hv-list-print-btn');
 const hvListExcelBtn = document.getElementById('hv-list-excel-btn');
@@ -1016,22 +1017,29 @@ const handlePrintPhieu = () => {
     document.body.classList.remove('printing');
     // (SỬA LỖI) Thêm class 'hidden' trở lại
     printSection.classList.add('hidden');
+
+    // (NÂNG CẤP 1) Tự động reset form sau khi in
+    resetGhiDanhForm();
 };
 ghiDanhPrintButton.addEventListener('click', handlePrintPhieu);
 
 
-// --- (MỚI) NGHIỆP VỤ BƯỚC 3b: QUẢN LÝ HỌC VIÊN ---
+// --- (NÂNG CẤP) NGHIỆP VỤ BƯỚC 3b: QUẢN LÝ HỌC VIÊN ---
 
 // Hàm lọc và tìm kiếm chính
 const applyHocVienFilterAndRender = () => {
     let list = [...globalHocVienList];
+    const now = new Date();
     
-    // 1. Lọc theo thời gian (Tháng này / Tất cả)
+    // 1. Lọc theo thời gian (Hôm nay / Tháng này / Tất cả)
     if (currentHVFilter === 'thangnay') {
-        const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         list = list.filter(hv => hv.ngayGhiDanh.toDate() >= startOfMonth);
+    } else if (currentHVFilter === 'today') { // (NÂNG CẤP 3b)
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        list = list.filter(hv => hv.ngayGhiDanh.toDate() >= startOfToday);
     }
+    // Nếu là 'tatca', không cần lọc
     
     // 2. Lọc theo từ khoá tìm kiếm
     const searchTerm = hvSearchInput.value.toLowerCase().trim();
@@ -1055,21 +1063,22 @@ const renderHocVienTable = () => {
     if (!hocVienTableBody) return;
     
     if (filteredHocVienList.length === 0) {
-        hocVienTableBody.innerHTML = `<tr><td colspan="10" class="px-6 py-4 text-center text-gray-500">Không tìm thấy học viên nào.</td></tr>`;
+        // (NÂNG CẤP 3a) Sửa colspan từ 10 thành 7
+        hocVienTableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Không tìm thấy học viên nào.</td></tr>`;
         return;
     }
     
-    hocVienTableBody.innerHTML = filteredHocVienList.map(hv => `
+    hocVienTableBody.innerHTML = filteredHocVienList.map((hv, index) => `
         <tr class="hover:bg-gray-50">
+            <!-- (NÂNG CẤP 3c) Thêm STT -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${index + 1}</td>
+            <!-- (NÂNG CẤP 3d) Thêm Mã Thẻ -->
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.maThe || ''}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV || 'N/A'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">${formatCurrency(hv.hocPhi)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.hbaNhan)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.tongHoaHong)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.thue)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">${formatCurrency(hv.hlvThucNhan)}</td>
+            <!-- (NÂNG CẤP 3a) Xóa 5 cột tài chính -->
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium admin-only">
                 <button data-id="${hv.id}" class="edit-hocvien-btn text-indigo-600 hover:text-indigo-900">Sửa</button>
                 <button data-id="${hv.id}" data-name="${hv.tenHV}" class="delete-hocvien-btn text-red-600 hover:text-red-900 ml-4">Xoá</button>
@@ -1081,27 +1090,30 @@ const renderHocVienTable = () => {
 // Gắn event cho Lọc và Tìm kiếm
 hvSearchInput.addEventListener('input', applyHocVienFilterAndRender);
 
-// (SỬA LỖI HOVER)
-filterBtnThangNay.addEventListener('click', () => {
-    currentHVFilter = 'thangnay';
-    // Active 'Tháng Này'
-    filterBtnThangNay.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-    filterBtnThangNay.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
-    // Inactive 'Tất Cả'
-    filterBtnTatCa.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-    filterBtnTatCa.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+// (NÂNG CẤP 3b) Logic cho 3 nút lọc
+const updateHVFilterButtons = (activeBtn) => {
+    const buttons = [filterBtnHomNay, filterBtnThangNay, filterBtnTatCa];
+    buttons.forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+        btn.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+    });
+    activeBtn.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
+    activeBtn.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+};
+
+filterBtnHomNay.addEventListener('click', () => {
+    currentHVFilter = 'today';
+    updateHVFilterButtons(filterBtnHomNay);
     applyHocVienFilterAndRender();
 });
-
-// (SỬA LỖI HOVER)
+filterBtnThangNay.addEventListener('click', () => {
+    currentHVFilter = 'thangnay';
+    updateHVFilterButtons(filterBtnThangNay);
+    applyHocVienFilterAndRender();
+});
 filterBtnTatCa.addEventListener('click', () => {
     currentHVFilter = 'tatca';
-    // Active 'Tất Cả'
-    filterBtnTatCa.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-    filterBtnTatCa.classList.remove('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
-    // Inactive 'Tháng Này'
-    filterBtnThangNay.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
-    filterBtnThangNay.classList.add('bg-white', 'text-gray-700', 'hover:bg-indigo-100', 'hover:text-indigo-700');
+    updateHVFilterButtons(filterBtnTatCa);
     applyHocVienFilterAndRender();
 });
 
@@ -1230,7 +1242,7 @@ const updateQuickReport = () => {
     let doanhThuHomNay = 0;
     let doanhThuThangNay = 0;
     let soHVHomNay = 0;
-    let soHVThangNay = 0; // <-- (SỬA LỖI 2)
+    let soHVThangNay = 0; // (SỬA LỖI 2)
     let danhSachHVHomNayHTML = '';
     
     globalHocVienList.forEach((hv, index) => {
@@ -1251,7 +1263,7 @@ const updateQuickReport = () => {
         
         if (ngayGhiDanh >= startOfMonth) {
             doanhThuThangNay += hv.hocPhi;
-            soHVThangNay++; // <-- (SỬA LỖI 2) Thêm dòng này
+            soHVThangNay++; // (SỬA LỖI 2) Thêm dòng này
         }
     });
     
@@ -1259,7 +1271,7 @@ const updateQuickReport = () => {
     qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
     qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
     qrHvNgay.textContent = soHVHomNay;
-    qrHvThang.textContent = soHVThangNay; // <-- (SỬA LỖI 2) Gán
+    qrHvThang.textContent = soHVThangNay; // (SỬA LỖI 2) Gán
     
     // Cập nhật bảng
     if (soHVHomNay === 0) {
@@ -1415,6 +1427,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- Thẻ thống kê tổng quan -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu</span>
@@ -1430,6 +1443,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
             </div>
         </div>
         
+        <!-- Bảng chi tiết Tổng quan -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1505,6 +1519,7 @@ const renderHLVReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- Bảng chi tiết Thu nhập HLV -->
         <div class="overflow-x-auto rounded-lg shadow">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
@@ -1552,6 +1567,7 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
             Đến ngày: <span class="font-medium">${formatDateForDisplay(endDate)}</span>
         </p>
         
+        <!-- (NÂNG CẤP) Thẻ Thống kê Tổng cộng -->
         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
             <span class="block text-sm font-medium text-blue-700">Tổng Doanh Thu (trong kỳ)</span>
             <span class="text-2xl font-bold text-blue-900">${formatCurrency(totalRevenue)} VNĐ</span>
@@ -1566,12 +1582,19 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
+                        <!-- (NÂNG CẤP) Sửa tiêu đề cột -->
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
+                        <!-- (NÂNG CẤP 2) Thêm 5 cột mới -->
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hình thức TT</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HBA Nhận</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Hoa Hồng</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuế</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Thực Nhận</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     ${data.length === 0 
-                        ? `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>`
+                        ? `<tr><td colspan="11" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>` // Sửa colspan
                         : data.map((hv, index) => `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${index + 1}</td>
@@ -1579,7 +1602,14 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
+                                <!-- (NÂNG CẤP) Sửa cột -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hv.hocPhi)} VNĐ</td>
+                                <!-- (NÂNG CẤP 2) Thêm 5 cột mới -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.hinhThucThanhToan || 'N/A'}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.hbaNhan)}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.tongHoaHong)}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.thue)}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-700">${formatCurrency(hv.hlvThucNhan)}</td>
                             </tr>
                         `).join('')
                     }
@@ -1654,7 +1684,7 @@ const generateHLVReportPrintHTML = (data) => {
     const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
 
     return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 12pt;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
             <thead style="background-color: #f3f4f6;">
                 <tr>
                     <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tên HLV</th>
@@ -1689,7 +1719,7 @@ const generateDoanhThuChiTietPrintHTML = (data) => {
     return `
         <p style="font-size: 12pt; margin-bottom: 20px;"><strong>Tổng Doanh Thu:</strong> ${formatCurrency(totalRevenue)} VNĐ</p>
         
-        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
             <thead style="background-color: #f3f4f6;">
                 <tr>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">STT</th>
@@ -1698,6 +1728,11 @@ const generateDoanhThuChiTietPrintHTML = (data) => {
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Phụ Trách</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Doanh thu</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Hình thức TT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HBA Nhận</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tổng Hoa Hồng</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Thuế</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Thực Nhận</th>
                 </tr>
             </thead>
             <tbody>
@@ -1708,7 +1743,12 @@ const generateDoanhThuChiTietPrintHTML = (data) => {
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hocPhi)} VNĐ</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hocPhi)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.hinhThucThanhToan || 'N/A'}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hbaNhan)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.tongHoaHong)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.thue)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hlvThucNhan)}</td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -1851,7 +1891,7 @@ const handleExportExcel = () => {
                 [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`],
                 ["Tổng Doanh Thu:", totalRevenue],
                 [], // Hàng trống
-                ["STT", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Doanh thu"]
+                ["STT", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Doanh thu", "Hình thức TT", "HBA Nhận", "Tổng Hoa Hồng", "Thuế", "HLV Thực Nhận"]
             ];
             
             currentReportData
@@ -1863,7 +1903,12 @@ const handleExportExcel = () => {
                         hv.sdtHV,
                         hv.tenHLV,
                         hv.tenGoiHoc,
-                        hv.hocPhi
+                        hv.hocPhi,
+                        hv.hinhThucThanhToan || 'N/A',
+                        hv.hbaNhan,
+                        hv.tongHoaHong,
+                        hv.thue,
+                        hv.hlvThucNhan
                     ]);
                 });
         }
@@ -1878,7 +1923,10 @@ const handleExportExcel = () => {
         } else if (currentReportType === 'tongquan') {
             ws['!cols'] = [ { wch: 30 }, { wch: 25 } ];
         } else if (currentReportType === 'doanhthu_chitiet') { // (NÂNG CẤP)
-            ws['!cols'] = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 } ];
+            ws['!cols'] = [ 
+                { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, 
+                { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+            ];
         }
 
         // Thêm worksheet vào workbook
@@ -2060,25 +2108,27 @@ const handlePrintHVList = () => {
         <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
             <thead style="background-color: #f3f4f6;">
                 <tr>
+                    <!-- (NÂNG CẤP 3c/d) Thêm STT, Mã thẻ -->
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">STT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Mã Thẻ</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tên HV</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV</th>
                     <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Ngày Ghi Danh</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Ngày Hết Hạn</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Net</th>
+                    <!-- (NÂNG CẤP 3a) Xóa cột tài chính -->
                 </tr>
             </thead>
             <tbody>
-                ${filteredHocVienList.map(hv => `
+                ${filteredHocVienList.map((hv, index) => `
                     <tr>
+                        <!-- (NÂNG CẤP 3c/d) Thêm STT, Mã thẻ -->
+                        <td style="border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.maThe || ''}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || 'N/A'}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayGhiDanh)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHan)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hlvThucNhan)}</td>
+                        <!-- (NÂNG CẤP 3a) Xóa cột tài chính -->
                     </tr>
                 `).join('')}
             </tbody>
@@ -2091,7 +2141,7 @@ const handlePrintHVList = () => {
         </div>
         <h2 id="print-title">DANH SÁCH HỌC VIÊN</h2>
         <p style="font-size: 12pt; margin-bottom: 20px; text-align: center;">
-            (Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : 'Toàn Bộ'})
+            (Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : (currentHVFilter === 'today' ? 'HV Hôm Nay' : 'Toàn Bộ')})
         </p>
         ${tableHTML}
     `;
@@ -2115,38 +2165,39 @@ const handleExportHVList = () => {
     try {
         const dataForSheet = [
             ["DANH SÁCH HỌC VIÊN"],
-            [`(Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : 'Toàn Bộ'})`],
+            [`(Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : (currentHVFilter === 'today' ? 'HV Hôm Nay' : 'Toàn Bộ')})`],
             [],
             [
+                // (NÂNG CẤP 3c/d) Thêm STT, Mã thẻ
+                "STT", "Mã Thẻ",
                 "Tên Học Viên", "Số Điện Thoại", "HLV Phụ Trách", "Gói Học",
-                "Ngày Ghi Danh", "Ngày Hết Hạn",
-                "Tổng Doanh Thu", "HBA Nhận", "Tổng Hoa Hồng", "Thuế", "HLV Thực Nhận"
+                "Ngày Ghi Danh", "Ngày Hết Hạn"
+                // (NÂNG CẤP 3a) Xóa cột tài chính
             ]
         ];
 
-        filteredHocVienList.forEach(hv => {
+        filteredHocVienList.forEach((hv, index) => {
             dataForSheet.push([
+                // (NÂNG CẤP 3c/d) Thêm STT, Mã thẻ
+                index + 1,
+                hv.maThe || '',
                 hv.tenHV,
                 hv.sdtHV,
                 hv.tenHLV || 'N/A',
                 hv.tenGoiHoc,
                 formatDateForDisplay(hv.ngayGhiDanh),
-                formatDateForDisplay(hv.ngayHetHan),
-                hv.hocPhi,
-                hv.hbaNhan,
-                hv.tongHoaHong,
-                hv.thue,
-                hv.hlvThucNhan
+                formatDateForDisplay(hv.ngayHetHan)
+                // (NÂNG CẤP 3a) Xóa cột tài chính
             ]);
         });
 
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
         
+        // (NÂNG CẤP 3a/c/d) Cập nhật độ rộng cột
         ws['!cols'] = [
-            { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
-            { wch: 15 }, { wch: 15 },
-            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+            { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, 
+            { wch: 25 }, { wch: 20 }, { wch: 15 }, { wch: 15 }
         ];
 
         XLSX.utils.book_append_sheet(wb, ws, 'DanhSachHV');
