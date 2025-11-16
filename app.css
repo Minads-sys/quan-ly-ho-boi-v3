@@ -128,7 +128,7 @@ input[type=number] {
     #print-signatures, #print-qr-signatures {
         display: flex;
         justify-content: space-around;
-        margin-top: 40px; /* (SỬA) Giảm lề */
+        margin-top: 30px; /* (SỬA) Giảm lề */
         font-size: 11pt; /* (SỬA) Giảm cỡ chữ */
     }
     .signature-box {
@@ -171,3 +171,4 @@ input[type=number] {
         display: none !important;
     }
 }
+
