@@ -67,62 +67,66 @@ input[type=number] {
     -moz-appearance: textfield;
 }
 
-/* --- CSS CHUNG CHO IN ẤN --- */
+/* (MỚI) Style cho hàng đã vô hiệu hóa */
+.inactive-row {
+    background-color: #f3f4f6; /* Xám nhạt */
+    color: #9ca3af; /* Chữ xám */
+}
+.inactive-row td {
+    color: #9ca3af !important;
+}
+
+/* --- CSS CHO VIỆC IN PHIẾU --- */
 @media print {
-    /* (MỚI) Gợi ý trình duyệt dùng khổ A4 Dọc */
     @page {
         size: A4 portrait;
-        margin: 20mm; /* Thêm lề cho trang in */
+        margin: 20mm;
     }
     
-    /* Ẩn mọi thứ không cần thiết */
     body.printing * {
         visibility: hidden;
     }
-    /* Chỉ hiển thị khu vực in và nội dung của nó */
     #print-section, #print-section * {
         visibility: visible;
     }
-    /* Cấu hình trang in */
     #print-section {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
         margin: 0;
-        padding: 0; /* (SỬA) Bỏ padding của section */
+        padding: 0;
         font-family: 'Times New Roman', Times, serif;
         color: #000;
     }
-    /* Tùy chỉnh các phần tử trong phiếu in */
     #print-header {
         text-align: center;
-        margin-bottom: 20px; /* (SỬA) Giảm lề */
+        margin-bottom: 20px;
     }
     #print-header h4 {
-        font-size: 14pt; /* (SỬA) Giảm cỡ chữ */
+        font-size: 14pt;
         font-weight: bold;
         margin: 0;
         text-transform: uppercase;
     }
     #print-header h5 {
-        font-size: 12pt; /* (SỬA) Giảm cỡ chữ */
+        font-size: 12pt;
         font-weight: bold;
         margin: 5px 0;
     }
     #print-title {
         text-align: center;
-        font-size: 18pt; /* (SỬA) Giảm cỡ chữ */
+        font-size: 18pt;
         font-weight: bold;
-        margin-bottom: 20px; /* (SỬA) Giảm lề */
+        margin-bottom: 20px;
         text-transform: uppercase;
     }
     #print-details {
-        font-size: 12pt; /* (SỬA) Giảm cỡ chữ */
-        line-height: 1.6; /* (SỬA) Giảm chiều cao dòng */
+        font-size: 12pt;
+        line-height: 1.6;
     }
     #print-details p {
-        margin-bottom: 5px; /* (SỬA) Giảm lề */
+        margin-bottom: 5px;
     }
     #print-details strong {
         font-weight: bold;
@@ -130,12 +134,11 @@ input[type=number] {
         display: inline-block;
     }
     
-    /* (MỚI) Style cho chữ ký (Dùng chung cho Phiếu Ghi Danh & Daily Report) */
     #print-signatures, #print-qr-signatures {
         display: flex;
         justify-content: space-around;
-        margin-top: 30px; /* (SỬA) Giảm lề */
-        font-size: 11pt; /* (SỬA) Giảm cỡ chữ */
+        margin-top: 30px;
+        font-size: 11pt;
     }
     .signature-box {
         text-align: center;
@@ -144,15 +147,14 @@ input[type=number] {
         margin: 0;
     }
     .signature-box p:last-child {
-        margin-top: 40px; /* (SỬA) Giảm khoảng trống ký */
+        margin-top: 40px;
         font-style: italic;
     }
 
-    /* Tùy chỉnh cho Báo cáo (để bảng không bị vỡ) */
     #print-section table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 10pt; /* Giảm cỡ chữ cho bảng báo cáo */
+        font-size: 10pt;
     }
     #print-section th, #print-section td {
         border: 1px solid #ddd;
@@ -163,24 +165,21 @@ input[type=number] {
         background-color: #f3f4f6;
     }
     
-    /* (MỚI) Thu nhỏ bảng Daily Report 9 cột để vừa A4 Dọc */
     #print-section #qr-hv-table-body th,
     #print-section #qr-hv-table-body td {
-        font-size: 9pt; /* Làm chữ nhỏ hơn nữa */
-        padding: 4px;   /* Giảm padding */
-        word-break: break-all; /* Bẻ gãy chữ nếu cần */
+        font-size: 9pt;
+        padding: 4px;
+        word-break: break-all;
     }
 
-    /* (MỚI) Style cho Thống kê Daily Report (Tiền mặt/CK) */
     #print-qr-summary {
-        margin-top: 15px; /* (SỬA) Giảm lề */
+        margin-top: 15px;
         font-size: 12pt;
     }
     #print-qr-summary p {
         margin-bottom: 5px;
     }
 
-    /* Ẩn nút In trên bản in */
     .no-print {
         display: none !important;
     }
