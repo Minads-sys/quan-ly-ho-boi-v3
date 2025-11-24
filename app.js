@@ -40,23 +40,23 @@ const db = getFirestore(app);
 
 // --- BIẾN TOÀN CỤC ---
 let currentUser = null;
-let currentUserRole = null;
+let currentUserRole = null; // 'admin', 'letan', or null
 let globalRateHBA = 0;
 let globalRateTax = 0;
 let globalGoiHocList = [];
 let globalHLVList = [];
-let globalHocVienList = []; 
-let filteredHocVienList = []; 
-let currentDeleteInfo = { type: null, id: null, isActive: true }; // (MỚI) Thêm trạng thái isActive để biết Xóa hay Kích hoạt
-let lastRegisteredHocVien = null; 
-let quickReportData = []; 
+let globalHocVienList = []; // Danh sách gốc từ Firestore
+let filteredHocVienList = []; // Danh sách đã lọc/tìm kiếm để hiển thị
+let currentDeleteInfo = { type: null, id: null }; // Để modal xoá biết xoá gì
+let lastRegisteredHocVien = null; // Lưu HV vừa ghi danh để In
+let quickReportData = []; // (NÂNG CẤP "Daily Report") Lưu HV trong ngày
 
 // Biến lưu các hàm unsubscribe listeners
 let unsubGoiHoc = null;
 let unsubHLV = null;
 let unsubHocVien = null;
 
-// --- DOM ELEMENTS ---
+// --- DOM ELEMENTS (Các phần tử UI chính) ---
 const globalLoader = document.getElementById('global-loader');
 const loginScreen = document.getElementById('login-screen');
 const mainApp = document.getElementById('main-app');
@@ -75,19 +75,19 @@ const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
 const modalCloseButton = document.getElementById('modal-close-button');
 
-// Elements cho Modal Xoá (Deactivate)
+// Elements cho Modal Xoá
 const deleteConfirmModal = document.getElementById('delete-confirm-modal');
 const deleteMessage = document.getElementById('delete-message');
 const deleteCancelButton = document.getElementById('delete-cancel-button');
 const deleteConfirmButton = document.getElementById('delete-confirm-button');
 
-// Elements cho Tab Cài Đặt
+// Elements cho Tab Cài Đặt (Step 2a)
 const rateHBAInput = document.getElementById('setting-rate-hba');
 const rateTaxInput = document.getElementById('setting-rate-tax');
 const saveSettingsButton = document.getElementById('save-settings-button');
 const settingsSpinner = document.getElementById('settings-spinner');
 
-// Elements cho Tab Gói Học
+// Elements cho Tab Gói Học (Step 2b)
 const goiHocTableBody = document.getElementById('goi-hoc-table-body');
 const addGoiHocButton = document.getElementById('add-goi-hoc-button');
 const goiHocModal = document.getElementById('goi-hoc-modal');
@@ -100,7 +100,7 @@ const goiHocHocPhiInput = document.getElementById('goi-hoc-hoc-phi');
 const goiHocThoiHanInput = document.getElementById('goi-hoc-thoi-han');
 const goiHocCancelButton = document.getElementById('goi-hoc-cancel-button');
 
-// Elements cho Tab HLV
+// Elements cho Tab HLV (Step 2c)
 const hlvTableBody = document.getElementById('hlv-table-body');
 const addHLVButton = document.getElementById('add-hlv-button');
 const hlvModal = document.getElementById('hlv-modal');
@@ -113,7 +113,7 @@ const hlvLoaiSelect = document.getElementById('hlv-loai');
 const hlvUuTienInput = document.getElementById('hlv-uu-tien');
 const hlvCancelButton = document.getElementById('hlv-cancel-button');
 
-// Elements cho Tab Ghi Danh
+// Elements cho Tab Ghi Danh (Step 3a)
 const ghiDanhForm = document.getElementById('ghi-danh-form');
 const goiHocSelect = document.getElementById('goiHoc');
 const displayHocPhi = document.getElementById('displayHocPhi');
@@ -168,8 +168,12 @@ const qrDtThang = document.getElementById('qr-dt-thang');
 const qrHvNgay = document.getElementById('qr-hv-ngay');
 const qrHvThang = document.getElementById('qr-hv-thang');
 const qrHvTableBody = document.getElementById('qr-hv-table-body');
-const qrPrintBtn = document.getElementById('qr-print-btn');
-const qrExcelBtn = document.getElementById('qr-excel-btn');
+const qrPrintBtn = document.getElementById('qr-print-btn'); // (MỚI)
+const qrExcelBtn = document.getElementById('qr-excel-btn'); // (MỚI)
+// (MỚI) Element lọc ngày báo cáo nhanh
+const qrDateFilterInput = document.getElementById('qr-date-filter'); // Cần thêm vào HTML nếu chưa có
+const qrViewBtn = document.getElementById('qr-view-btn'); // Cần thêm vào HTML nếu chưa có
+
 
 // Elements cho Tab Báo Cáo
 const reportTypeSelect = document.getElementById('report-type');
@@ -238,7 +242,7 @@ const closeModal = () => {
 };
 modalCloseButton.addEventListener('click', closeModal);
 
-// (MỚI) Modal Xoá/Vô Hiệu Hóa
+// Modal Xoá/Vô Hiệu Hóa
 const showDeleteModal = (type, id, name, isActive = true) => {
     currentDeleteInfo = { type, id, isActive };
     
@@ -271,7 +275,7 @@ const closeDeleteModal = () => {
 };
 deleteCancelButton.addEventListener('click', closeDeleteModal);
 
-// (MỚI) Hàm xử lý Vô Hiệu Hóa / Xóa
+// Hàm xử lý Vô Hiệu Hóa / Xóa
 const handleConfirmDelete = async () => {
     const { type, id, isActive } = currentDeleteInfo;
     if (!type || !id) return;
@@ -281,7 +285,7 @@ const handleConfirmDelete = async () => {
             await deleteDoc(doc(db, "goi_hoc", id));
             showModal("Đã xoá thành công!", "Thành công");
         } else if (type === 'hlv') {
-            // (MỚI) Logic Soft Delete cho HLV
+            // Logic Soft Delete cho HLV
             const newState = !isActive; // Đảo ngược trạng thái
             await updateDoc(doc(db, "hlv", id), { active: newState });
             showModal(newState ? "Đã kích hoạt lại HLV." : "Đã vô hiệu hóa HLV.", "Thành công");
@@ -377,6 +381,14 @@ const loadAllInitialData = async () => {
     await loadHocVien();
     setupGhiDanhTab();
     setupReportTabDefaults();
+    
+    // Set default date for QR filter if exists
+    if(document.getElementById('qr-date-from')) {
+        document.getElementById('qr-date-from').value = formatDateForInput(new Date());
+    }
+    if(document.getElementById('qr-date-to')) {
+        document.getElementById('qr-date-to').value = formatDateForInput(new Date());
+    }
 };
 
 loginForm.addEventListener('submit', async (e) => {
@@ -569,9 +581,7 @@ const loadHLV = () => {
     unsubHLV = onSnapshot(q, (querySnapshot) => {
         globalHLVList = [];
         querySnapshot.forEach((doc) => {
-            // (MỚI) Xử lý active
             const data = doc.data();
-            // Nếu không có trường active, mặc định là true
             const isActive = data.active !== false; 
             globalHLVList.push({ 
                 id: doc.id, 
@@ -598,7 +608,6 @@ const renderHLVTable = () => {
     const sortedList = [...globalHLVList].sort((a, b) => (a.thuTuUuTien || 99) - (b.thuTuUuTien || 99));
 
     hlvTableBody.innerHTML = sortedList.map(hlv => {
-        // (MỚI) Logic hiển thị dòng inactive
         const rowClass = hlv.active ? '' : 'inactive-row';
         const statusText = hlv.active ? '<span class="text-green-600 font-bold">Đang làm</span>' : '<span class="text-gray-500 italic">Đã nghỉ</span>';
         const btnText = hlv.active ? 'Vô hiệu hóa' : 'Kích hoạt lại';
@@ -657,12 +666,12 @@ hlvForm.addEventListener('submit', async (e) => {
         caDay: hlvCaDaySelect.value,
         loaiHLV: hlvLoaiSelect.value,
         thuTuUuTien: parseInt(hlvUuTienInput.value) || 99,
-        active: true // Mặc định là active khi tạo/sửa
+        active: true 
     };
 
     try {
         if (id) {
-            await setDoc(doc(db, "hlv", id), data, { merge: true }); // Merge để không mất active
+            await setDoc(doc(db, "hlv", id), data, { merge: true }); 
         } else {
             await addDoc(collection(db, "hlv"), data);
         }
@@ -684,7 +693,6 @@ hlvTableBody.addEventListener('click', (e) => {
     
     if (target.classList.contains('delete-hlv-btn')) {
         const hlv = globalHLVList.find(h => h.id === id);
-        // (MỚI) Truyền trạng thái active vào modal
         showDeleteModal('hlv', id, hlv.tenHLV, hlv.active);
     }
 });
@@ -720,7 +728,6 @@ const updateHLVCounters = () => {
     }
 
     for (const hv of globalHocVienList) {
-        // (MỚI) Kiểm tra nếu HLV còn tồn tại trong danh sách (chưa bị xóa cứng)
         const hlv = globalHLVList.find(h => h.id === hv.hlvId);
         if (!hlv) continue;
         
@@ -744,7 +751,6 @@ const setupGhiDanhTab = () => {
         goiHocSelect.innerHTML += `<option value="${goi.id}">${goi.tenGoi} (${formatCurrency(goi.hocPhi)} VNĐ)</option>`;
     }
 
-    // (MỚI) Lọc: Chỉ hiển thị HLV active cho dropdown Chỉ định
     const hlvChiDinhList = globalHLVList.filter(hlv => hlv.loaiHLV === 'Chỉ Định' && hlv.active !== false);
     hlvChiDinhSelect.innerHTML = '<option value="">-- Chọn HLV --</option>';
     for (const hlv of hlvChiDinhList) {
@@ -785,7 +791,6 @@ hlvChiDinhSelect.addEventListener('change', () => {
 
 // THUẬT TOÁN CHIA HLV 3 VÒNG
 function findBestHLV(caDay, nhomTuoi) {
-    // (MỚI) Lọc: Chỉ xét HLV active
     let candidates = globalHLVList.filter(hlv => 
         hlv.caDay === caDay && hlv.loaiHLV === 'Tự động' && hlv.active !== false
     );
@@ -961,7 +966,217 @@ const handlePrintPhieu = () => {
 ghiDanhPrintButton.addEventListener('click', handlePrintPhieu);
 
 
+// --- (MỚI) "DAILY REPORT" CHO LỄ TÂN (TAB GHI DANH) ---
+
+// Hàm update báo cáo nhanh dựa trên bộ lọc ngày
+const updateQuickReport = (startDate = null, endDate = null) => {
+    const now = new Date();
+    
+    // Mặc định là "Hôm nay" nếu không truyền tham số
+    let start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    
+    // Đảm bảo end bao gồm hết ngày
+    if (endDate) end.setHours(23, 59, 59);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let doanhThuLoc = 0;
+    let doanhThuThangNay = 0;
+    let soHVLoc = 0;
+    let soHVThangNay = 0;
+    let danhSachHVLocHTML = '';
+    
+    quickReportData = []; // Reset dữ liệu báo cáo
+
+    globalHocVienList.forEach((hv, index) => {
+        const ngayGhiDanh = hv.ngayGhiDanh.toDate();
+        
+        // Tính toán cho bộ lọc (Ngày/Khoảng ngày)
+        if (ngayGhiDanh >= start && ngayGhiDanh <= end) {
+            doanhThuLoc += hv.hocPhi;
+            soHVLoc++;
+            quickReportData.push(hv); 
+
+            // Tạo hàng bảng (9 cột)
+            danhSachHVLocHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${soHVLoc}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.soPhieuThu || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.maThe || ''}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(hv.hocPhi)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.hinhThucThanhToan || 'N/A'}</td>
+                </tr>
+            `;
+        }
+        
+        // Tính toán cho Tháng này (Luôn hiển thị)
+        if (ngayGhiDanh >= startOfMonth) {
+            doanhThuThangNay += hv.hocPhi;
+            soHVThangNay++;
+        }
+    });
+    
+    // Cập nhật UI
+    qrDtNgay.textContent = `${formatCurrency(doanhThuLoc)} VNĐ`;
+    qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
+    qrHvNgay.textContent = soHVLoc;
+    qrHvThang.textContent = soHVThangNay;
+    
+    if (soHVLoc === 0) {
+        qrHvTableBody.innerHTML = `<tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu trong khoảng thời gian này.</td></tr>`;
+    } else {
+        qrHvTableBody.innerHTML = danhSachHVLocHTML;
+    }
+};
+
+// Xử lý sự kiện lọc ngày cho Daily Report
+if (document.getElementById('qr-view-btn')) {
+    document.getElementById('qr-view-btn').addEventListener('click', () => {
+        const fromDate = document.getElementById('qr-date-from').value;
+        const toDate = document.getElementById('qr-date-to').value;
+        if (fromDate && toDate) {
+            updateQuickReport(fromDate, toDate);
+        } else {
+            showModal("Vui lòng chọn đầy đủ Từ ngày và Đến ngày.", "Lỗi");
+        }
+    });
+}
+
+// In Báo cáo nhanh
+const handlePrintQuickReport = () => {
+    if (quickReportData.length === 0) {
+        showModal("Không có dữ liệu để in.", "Lỗi");
+        return;
+    }
+    
+    let totalTienMat = 0;
+    let totalChuyenKhoan = 0;
+    let totalDoanhThu = 0;
+
+    const tableHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 6px;">STT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Số phiếu thu</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Mã thẻ</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Tên Học Viên</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">SĐT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">HLV</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Gói Học</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Doanh thu</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">HTTT</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${quickReportData.map((hv, index) => {
+                    if (hv.hinhThucThanhToan === 'Tiền mặt') totalTienMat += hv.hocPhi;
+                    else if (hv.hinhThucThanhToan === 'Chuyển khoản') totalChuyenKhoan += hv.hocPhi;
+                    totalDoanhThu += hv.hocPhi;
+                    
+                    return `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.soPhieuThu || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.maThe || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hocPhi)}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.hinhThucThanhToan || ''}</td>
+                    </tr>
+                `}).join('')}
+            </tbody>
+        </table>
+    `;
+
+    const dateLabel = document.getElementById('qr-date-from') && document.getElementById('qr-date-from').value 
+        ? `${formatDateForDisplay(new Date(document.getElementById('qr-date-from').value))}` 
+        : formatDateForDisplay(new Date());
+
+    const printContent = `
+        <div id="print-header">
+            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
+        </div>
+        <h2 id="print-title">BÁO CÁO DOANH THU HỌC BƠI NGÀY ${dateLabel}</h2>
+        ${tableHTML}
+        <div id="print-qr-summary" style="margin-top: 20px; font-size: 12pt; text-align: right;">
+            <p>Tổng Tiền mặt: <strong>${formatCurrency(totalTienMat)} VNĐ</strong></p>
+            <p>Tổng Chuyển khoản: <strong>${formatCurrency(totalChuyenKhoan)} VNĐ</strong></p>
+            <p style="font-size: 14pt;">TỔNG CỘNG: <strong>${formatCurrency(totalDoanhThu)} VNĐ</strong></p>
+        </div>
+        <div id="print-qr-signatures" style="display: flex; justify-content: space-around; margin-top: 50px;">
+            <div style="text-align: center;"><p><strong>Người lập phiếu</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
+            <div style="text-align: center;"><p><strong>Kế toán</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
+            <div style="text-align: center;"><p><strong>Giám đốc</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
+        </div>
+    `;
+    
+    printSection.innerHTML = printContent;
+    printSection.classList.remove('hidden');
+    document.body.classList.add('printing');
+    window.print();
+    document.body.classList.remove('printing');
+    printSection.classList.add('hidden');
+};
+if(qrPrintBtn) qrPrintBtn.addEventListener('click', handlePrintQuickReport);
+
+// Xuất Excel Báo cáo nhanh
+const handleExportQuickReport = () => {
+    if (quickReportData.length === 0) {
+        showModal("Không có dữ liệu để xuất Excel.", "Lỗi");
+        return;
+    }
+
+    try {
+        let totalTienMat = 0, totalChuyenKhoan = 0, totalDoanhThu = 0;
+        const dateLabel = document.getElementById('qr-date-from') && document.getElementById('qr-date-from').value 
+            ? `${formatDateForDisplay(new Date(document.getElementById('qr-date-from').value))}` 
+            : formatDateForDisplay(new Date());
+
+        const dataForSheet = [
+            [`BÁO CÁO DOANH THU HỌC BƠI NGÀY ${dateLabel}`],
+            [],
+            ["STT", "Số phiếu thu", "Mã thẻ", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Doanh thu", "Hình thức TT"]
+        ];
+
+        quickReportData.forEach((hv, index) => {
+            if (hv.hinhThucThanhToan === 'Tiền mặt') totalTienMat += hv.hocPhi;
+            else if (hv.hinhThucThanhToan === 'Chuyển khoản') totalChuyenKhoan += hv.hocPhi;
+            totalDoanhThu += hv.hocPhi;
+
+            dataForSheet.push([
+                index + 1, hv.soPhieuThu, hv.maThe, hv.tenHV, hv.sdtHV, hv.tenHLV, hv.tenGoiHoc, hv.hocPhi, hv.hinhThucThanhToan
+            ]);
+        });
+        
+        dataForSheet.push([]);
+        dataForSheet.push(["", "", "", "", "", "", "Tổng Tiền mặt:", totalTienMat]);
+        dataForSheet.push(["", "", "", "", "", "", "Tổng Chuyển khoản:", totalChuyenKhoan]);
+        dataForSheet.push(["", "", "", "", "", "", "TỔNG CỘNG:", totalDoanhThu]);
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+        ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 15 }, { wch: 15 }];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'DailyReport');
+        XLSX.writeFile(wb, `BaoCaoNgay_${dateLabel.replace(/\//g, '-')}.xlsx`);
+
+    } catch (error) {
+        showModal(`Lỗi xuất Excel: ${error.message}`, "Lỗi");
+    }
+};
+if(qrExcelBtn) qrExcelBtn.addEventListener('click', handleExportQuickReport);
+
+
 // --- (MỚI) NGHIỆP VỤ BƯỚC 3b: QUẢN LÝ HỌC VIÊN ---
+
 const applyHocVienFilterAndRender = () => {
     let list = [...globalHocVienList];
     const now = new Date();
@@ -1059,7 +1274,6 @@ hocVienTableBody.addEventListener('click', (e) => {
     }
 });
 
-// (NÂNG CẤP) Hàm mở Modal Sửa Học Viên (Lọc HLV active + current)
 const openHocVienEditModal = (hocvien) => {
     hocVienEditForm.reset();
     hocVienEditIdInput.value = hocvien.id;
@@ -1072,7 +1286,6 @@ const openHocVienEditModal = (hocvien) => {
     hocVienEditGoiHocInput.value = hocvien.tenGoiHoc;
     hocVienEditHTTTInput.value = hocvien.hinhThucThanhToan || 'Tiền mặt'; 
     
-    // (NÂNG CẤP) Chỉ hiện HLV active HOẶC HLV hiện tại của học viên đó (kể cả đã nghỉ)
     hocVienEditHLVInput.innerHTML = ''; 
     globalHLVList.forEach(hlv => {
         if (hlv.active !== false || hlv.id === hocvien.hlvId) {
@@ -1146,60 +1359,6 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         showModal(`Lỗi cập nhật: ${error.message}`, "Lỗi");
     }
 });
-
-// --- (MỚI) BƯỚC 4a: BÁO CÁO NHANH LỄ TÂN ---
-const updateQuickReport = () => {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    let doanhThuHomNay = 0;
-    let doanhThuThangNay = 0;
-    let soHVHomNay = 0;
-    let soHVThangNay = 0;
-    let danhSachHVHomNayHTML = '';
-    
-    quickReportData = []; 
-
-    globalHocVienList.forEach((hv, index) => {
-        const ngayGhiDanh = hv.ngayGhiDanh.toDate();
-        
-        if (ngayGhiDanh >= startOfToday) {
-            doanhThuHomNay += hv.hocPhi;
-            soHVHomNay++;
-            quickReportData.push(hv); 
-            danhSachHVHomNayHTML += `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${soHVHomNay}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.soPhieuThu || ''}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.maThe || ''}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(hv.hocPhi)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.hinhThucThanhToan || 'N/A'}</td>
-                </tr>
-            `;
-        }
-        
-        if (ngayGhiDanh >= startOfMonth) {
-            doanhThuThangNay += hv.hocPhi;
-            soHVThangNay++;
-        }
-    });
-    
-    qrDtNgay.textContent = `${formatCurrency(doanhThuHomNay)} VNĐ`;
-    qrDtThang.textContent = `${formatCurrency(doanhThuThangNay)} VNĐ`;
-    qrHvNgay.textContent = soHVHomNay;
-    qrHvThang.textContent = soHVThangNay;
-    
-    if (soHVHomNay === 0) {
-        qrHvTableBody.innerHTML = `<tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Chưa có học viên nào hôm nay.</td></tr>`;
-    } else {
-        qrHvTableBody.innerHTML = danhSachHVHomNayHTML;
-    }
-};
 
 
 // --- (MỚI) BƯỚC 4b/c: TAB BÁO CÁO ADMIN ---
@@ -1307,11 +1466,7 @@ const renderTongQuanReport = (data, startDate, endDate) => {
     let totalRevenue = 0, totalHbaNhan = 0, totalHlvGross = 0, totalThue = 0, totalHlvNet = 0;
     
     data.forEach(hv => {
-        totalRevenue += hv.hocPhi;
-        totalHbaNhan += hv.hbaNhan;
-        totalHlvGross += hv.tongHoaHong;
-        totalThue += hv.thue;
-        totalHlvNet += hv.hlvThucNhan;
+        totalRevenue += hv.hocPhi; totalHbaNhan += hv.hbaNhan; totalHlvGross += hv.tongHoaHong; totalThue += hv.thue; totalHlvNet += hv.hlvThucNhan;
     });
     
     const html = `
@@ -1504,10 +1659,7 @@ const generateHLVReportPrintHTML = (data) => {
         if (!reportByHLV[hlvId]) {
             reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 };
         }
-        reportByHLV[hlvId].soHVMoi++;
-        reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
-        reportByHLV[hlvId].tongThue += hv.thue;
-        reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
+        reportByHLV[hlvId].soHVMoi++; reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; reportByHLV[hlvId].tongThue += hv.thue; reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
     const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
 
@@ -1666,7 +1818,7 @@ const handleExportExcel = () => {
             currentReportData.forEach(hv => {
                 if (!hv.hlvId) return;
                 if (!reportByHLV[hv.hlvId]) { reportByHLV[hv.hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 }; }
-                reportByHLV[hv.hlvId].soHVMoi++; reportByHLV[hv.hlvId].tongDoanhThu += hv.hocPhi; reportByHLV[hv.hlvId].tongThue += hv.thue; reportByHLV[hv.hlvId].tongThucNhan += hv.hlvThucNhan;
+                reportByHLV[hlvId].soHVMoi++; reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; reportByHLV[hlvId].tongThue += hv.thue; reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
             dataForSheet = [
@@ -1738,6 +1890,8 @@ const handleImportStart = () => {
             const workbook = XLSX.read(data, { type: 'binary' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
+            
+            // Chuyển sang mảng, dùng header: 1 để lấy mảng của các mảng
             const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
             
             if (rows.length < 2) {
@@ -1747,10 +1901,14 @@ const handleImportStart = () => {
             const headers = rows[0].map(h => String(h).trim());
             const expectedHeaders = ["Tên Học Viên", "Số Điện Thoại", "Tên Gói Học", "Học phí", "Tên HLV", "Ca Dạy"];
             
+            // 1. Kiểm tra tiêu đề nghiêm ngặt
             if (headers.length < 6 ||
-                headers[0] !== expectedHeaders[0] || headers[1] !== expectedHeaders[1] ||
-                headers[2] !== expectedHeaders[2] || headers[3] !== expectedHeaders[3] ||
-                headers[4] !== expectedHeaders[4] || headers[5] !== expectedHeaders[5]) {
+                headers[0] !== expectedHeaders[0] ||
+                headers[1] !== expectedHeaders[1] ||
+                headers[2] !== expectedHeaders[2] ||
+                headers[3] !== expectedHeaders[3] ||
+                headers[4] !== expectedHeaders[4] ||
+                headers[5] !== expectedHeaders[5]) {
                 throw new Error(`Cấu trúc cột không hợp lệ. Phải là: ${expectedHeaders.join(', ')}`);
             }
 
@@ -1760,13 +1918,13 @@ const handleImportStart = () => {
             let errorCount = 0;
             const logMessages = [];
             const batch = writeBatch(db);
-            const today = new Date();
+            const today = new Date(); // Ngày ghi danh cho tất cả HV import
             const rateHBA = globalRateHBA / 100;
             const rateTax = globalRateTax / 100;
 
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                const rowNum = i + 1;
+                const rowNum = i + 1; // Số dòng trên Excel
                 
                 const tenHV = row[0] ? String(row[0]).trim() : '';
                 const sdtHV = row[1] ? String(row[1]).trim() : '';
@@ -1775,39 +1933,57 @@ const handleImportStart = () => {
                 const tenHLV = row[4] ? String(row[4]).trim() : '';
                 const caDay = row[5] ? String(row[5]).trim() : '';
 
+                // 2. Kiểm tra dữ liệu
                 if (!tenHV || !tenGoiHoc || !tenHLV || !caDay || hocPhi === 0) {
-                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Thiếu thông tin. Bỏ qua.</p>`);
-                    errorCount++; continue;
+                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Thiếu Tên, Gói Học, HLV, Ca Dạy hoặc Học Phí. Bỏ qua.</p>`);
+                    errorCount++;
+                    continue;
                 }
 
+                // 3. Kiểm tra Gói Học (KHỚP 100%)
                 const goiHoc = globalGoiHocList.find(g => g.tenGoi === tenGoiHoc);
                 if (!goiHoc) {
-                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Tên Gói Học "${tenGoiHoc}" không đúng. Bỏ qua.</p>`);
-                    errorCount++; continue;
+                    logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Tên Gói Học "${tenGoiHoc}" không tìm thấy trong CSDL. Bỏ qua.</p>`);
+                    errorCount++;
+                    continue;
                 }
                 
+                // 4. Kiểm tra HLV & Ca Dạy (KHỚP 100%)
                 const hlv = globalHLVList.find(h => h.tenHLV === tenHLV && h.caDay === caDay);
                 if (!hlv) {
                     logMessages.push(`<p class="text-red-400">[LỖI Dòng ${rowNum}]: Không tìm thấy HLV "${tenHLV}" dạy "${caDay}". Bỏ qua.</p>`);
-                    errorCount++; continue;
+                    errorCount++;
+                    continue;
                 }
 
+                // 5. Nếu tất cả đều OK -> Tính toán và thêm vào Batch
                 const ngayHetHan = new Date(today);
                 ngayHetHan.setDate(today.getDate() + goiHoc.thoiHan);
+
                 const hbaNhan = hocPhi * rateHBA;
                 const tongHoaHong = hocPhi - hbaNhan;
                 const thue = tongHoaHong * rateTax;
                 const hlvThucNhan = tongHoaHong - thue;
 
                 const hocVienData = {
-                    tenHV, sdtHV, nhomTuoi: 'N/A', caHoc: caDay, maThe: '',
+                    tenHV, sdtHV, 
+                    nhomTuoi: 'N/A', // Import không có nhóm tuổi
+                    caHoc: caDay,
+                    maThe: '',
                     soPhieuThu: `Import ${formatDateForDisplay(today)}`,
-                    hinhThucThanhToan: 'N/A',
-                    goiHocId: goiHoc.id, tenGoiHoc: goiHoc.tenGoi, soBuoi: goiHoc.soBuoi,
-                    hocPhi: hocPhi, hlvId: hlv.id, tenHLV: hlv.tenHLV,
-                    ngayGhiDanh: Timestamp.fromDate(today), ngayHetHan: Timestamp.fromDate(ngayHetHan),
-                    thoiHan: goiHoc.thoiHan, hbaNhan, tongHoaHong, thue, hlvThucNhan,
-                    nguoiGhiDanhId: currentUser.uid, nguoiGhiDanhEmail: currentUser.email,
+                    hinhThucThanhToan: 'N/A', // (NÂNG CẤP)
+                    goiHocId: goiHoc.id,
+                    tenGoiHoc: goiHoc.tenGoi,
+                    soBuoi: goiHoc.soBuoi,
+                    hocPhi: hocPhi,
+                    hlvId: hlv.id,
+                    tenHLV: hlv.tenHLV,
+                    ngayGhiDanh: Timestamp.fromDate(today),
+                    ngayHetHan: Timestamp.fromDate(ngayHetHan),
+                    thoiHan: goiHoc.thoiHan,
+                    hbaNhan, tongHoaHong, thue, hlvThucNhan,
+                    nguoiGhiDanhId: currentUser.uid,
+                    nguoiGhiDanhEmail: currentUser.email,
                 };
                 
                 const newDocRef = doc(collection(db, "hocvien"));
@@ -1815,298 +1991,31 @@ const handleImportStart = () => {
                 successCount++;
             }
             
-            if (successCount > 0) await batch.commit();
+            importLog.innerHTML += `<p>Đã xác thực ${rows.length - 1} dòng. Đang lưu vào CSDL...</p>`;
+            
+            // 6. Ghi Batch
+            if (successCount > 0) {
+                await batch.commit();
+            }
 
+            // 7. Hoàn tất
             importLog.innerHTML += `<p class="text-green-400 font-bold">--- IMPORT HOÀN TẤT ---</p>`;
-            importLog.innerHTML += `<p class="text-green-400">Thành công: ${successCount}</p>`;
-            importLog.innerHTML += `<p class="text-red-400">Thất bại: ${errorCount}</p>`;
+            importLog.innerHTML += `<p class="text-green-400">Thành công: ${successCount} / ${rows.length - 1}</p>`;
+            importLog.innerHTML += `<p class="text-red-400">Thất bại: ${errorCount} / ${rows.length - 1}</p>`;
+            importLog.innerHTML += `<p>--- Chi tiết lỗi ---</p>`;
             importLog.innerHTML += logMessages.join('');
 
         } catch (error) {
-            console.error("Lỗi import:", error);
-            importLog.innerHTML += `<p class="text-red-400 font-bold">LỖI NGHIÊM TRỌNG: ${error.message}</p>`;
+            console.error("Lỗi khi import:", error);
+            importLog.innerHTML += `<p class="text-red-400 font-bold">ĐÃ XẢY RA LỖI NGHIÊM TRỌNG:</p>`;
+            importLog.innerHTML += `<p class="text-red-400">${error.message}</p>`;
+            showModal(`Lỗi khi xử lý file: ${error.message}`, "Lỗi Import");
         } finally {
             importStartBtn.disabled = false;
             importSpinner.classList.add('hidden');
-            importFileInput.value = "";
+            importFileInput.value = ""; // Xoá file đã chọn
         }
     };
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
-
-
-// --- (NÂNG CẤP) Nâng cấp 2: IN VÀ XUẤT EXCEL TAB QUẢN LÝ HV ---
-
-// (NÂNG CẤP 2) Hàm In danh sách HV đang hiển thị
-const handlePrintHVList = () => {
-    if (filteredHocVienList.length === 0) {
-        showModal("Không có dữ liệu học viên để in.", "Lỗi");
-        return;
-    }
-
-    const tableHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
-            <thead style="background-color: #f3f4f6;">
-                <tr>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">STT</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Mã Thẻ</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tên HV</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Ngày Ghi Danh</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Ngày Hết Hạn</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${filteredHocVienList.map((hv, index) => `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.maThe || ''}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || 'N/A'}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayGhiDanh)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${formatDateForDisplay(hv.ngayHetHan)}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-
-    const printContent = `
-        <div id="print-header">
-            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
-        </div>
-        <h2 id="print-title">DANH SÁCH HỌC VIÊN</h2>
-        <p style="font-size: 12pt; margin-bottom: 20px; text-align: center;">
-            (Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : (currentHVFilter === 'today' ? 'HV Hôm Nay' : 'Toàn Bộ')})
-        </p>
-        ${tableHTML}
-    `;
-    
-    printSection.innerHTML = printContent;
-    printSection.classList.remove('hidden');
-    document.body.classList.add('printing');
-    window.print();
-    document.body.classList.remove('printing');
-    printSection.classList.add('hidden');
-};
-hvListPrintBtn.addEventListener('click', handlePrintHVList);
-
-// (NÂNG CẤP 2) Hàm Xuất Excel danh sách HV đang hiển thị
-const handleExportHVList = () => {
-    if (filteredHocVienList.length === 0) {
-        showModal("Không có dữ liệu học viên để xuất Excel.", "Lỗi");
-        return;
-    }
-
-    try {
-        const dataForSheet = [
-            ["DANH SÁCH HỌC VIÊN"],
-            [`(Lọc theo: ${currentHVFilter === 'thangnay' ? 'HV Mới Tháng Này' : (currentHVFilter === 'today' ? 'HV Hôm Nay' : 'Toàn Bộ')})`],
-            [],
-            [
-                "STT", "Mã Thẻ", "Tên Học Viên", "Số Điện Thoại", "HLV Phụ Trách", "Gói Học", "Ngày Ghi Danh", "Ngày Hết Hạn"
-            ]
-        ];
-
-        filteredHocVienList.forEach((hv, index) => {
-            dataForSheet.push([
-                index + 1,
-                hv.maThe || '',
-                hv.tenHV,
-                hv.sdtHV,
-                hv.tenHLV || 'N/A',
-                hv.tenGoiHoc,
-                formatDateForDisplay(hv.ngayGhiDanh),
-                formatDateForDisplay(hv.ngayHetHan)
-            ]);
-        });
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
-        
-        ws['!cols'] = [
-            { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, 
-            { wch: 25 }, { wch: 20 }, { wch: 15 }, { wch: 15 }
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, 'DanhSachHV');
-        const fileName = `DanhSachHocVien_${currentHVFilter}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-
-    } catch (error) {
-        console.error("Lỗi khi xuất Excel DS HV:", error);
-        showModal(`Không thể xuất file Excel: ${error.message}`, "Lỗi");
-    }
-};
-hvListExcelBtn.addEventListener('click', handleExportHVList);
-
-// --- (NÂNG CẤP "Daily Report") In & Xuất Báo cáo nhanh ---
-
-// (NÂNG CẤP "Daily Report") Hàm In Báo cáo nhanh
-const handlePrintQuickReport = () => {
-    if (quickReportData.length === 0) {
-        showModal("Không có học viên nào trong ngày để in.", "Lỗi");
-        return;
-    }
-    
-    let totalTienMat = 0;
-    let totalChuyenKhoan = 0;
-    let totalDoanhThu = 0;
-
-    const tableHTML = `
-        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
-            <thead style="background-color: #f3f4f6;">
-                <tr>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">STT</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Số phiếu thu</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Mã thẻ</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Tên Học Viên</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">SĐT</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">HLV Phụ Trách</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Gói Học</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Doanh thu</th>
-                    <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Hình thức TT</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${quickReportData.map((hv, index) => {
-                    // Tính toán tổng
-                    if (hv.hinhThucThanhToan === 'Tiền mặt') {
-                        totalTienMat += hv.hocPhi;
-                    } else if (hv.hinhThucThanhToan === 'Chuyển khoản') {
-                        totalChuyenKhoan += hv.hocPhi;
-                    }
-                    totalDoanhThu += hv.hocPhi;
-                    
-                    return `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${index + 1}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.soPhieuThu || ''}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.maThe || ''}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px; font-weight: bold;">${formatCurrency(hv.hocPhi)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.hinhThucThanhToan || 'N/A'}</td>
-                    </tr>
-                `}).join('')}
-            </tbody>
-        </table>
-    `;
-
-    const summaryHTML = `
-        <div id="print-qr-summary" style="margin-top: 20px; font-size: 12pt;">
-            <p><strong>Tổng Tiền mặt:</strong> ${formatCurrency(totalTienMat)} VNĐ</p>
-            <p><strong>Tổng Chuyển khoản:</strong> ${formatCurrency(totalChuyenKhoan)} VNĐ</p>
-            <p style="font-size: 14pt;"><strong>TỔNG CỘNG: ${formatCurrency(totalDoanhThu)} VNĐ</strong></p>
-        </div>
-    `;
-
-    const signatureHTML = `
-        <div id="print-qr-signatures" style="display: flex; justify-content: space-around; margin-top: 60px; font-size: 11pt;">
-            <div style="text-align: center;">
-                <p><strong>Người lập phiếu</strong></p>
-                <p style="margin-top: 60px; font-style: italic;">(Ký, ghi rõ họ tên)</p>
-            </div>
-            <div style="text-align: center;">
-                <p><strong>Kế toán</strong></p>
-                <p style="margin-top: 60px; font-style: italic;">(Ký, ghi rõ họ tên)</p>
-            </div>
-            <div style="text-align: center;">
-                <p><strong>Giám đốc</strong></p>
-                <p style="margin-top: 60px; font-style: italic;">(Ký, ghi rõ họ tên)</p>
-            </div>
-        </div>
-    `;
-
-    const printContent = `
-        <div id="print-header">
-            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
-        </div>
-        <h2 id="print-title">BÁO CÁO DOANH THU HỌC BƠI NGÀY ${formatDateForDisplay(new Date())}</h2>
-        ${tableHTML}
-        ${summaryHTML}
-        ${signatureHTML}
-    `;
-    
-    printSection.innerHTML = printContent;
-    printSection.classList.remove('hidden');
-    document.body.classList.add('printing');
-    window.print();
-    document.body.classList.remove('printing');
-    printSection.classList.add('hidden');
-};
-qrPrintBtn.addEventListener('click', handlePrintQuickReport);
-
-// (NÂNG CẤP "Daily Report") Hàm Xuất Excel Báo cáo nhanh
-const handleExportQuickReport = () => {
-    if (quickReportData.length === 0) {
-        showModal("Không có dữ liệu học viên trong ngày để xuất Excel.", "Lỗi");
-        return;
-    }
-
-    try {
-        let totalTienMat = 0;
-        let totalChuyenKhoan = 0;
-        let totalDoanhThu = 0;
-
-        const dataForSheet = [
-            [`BÁO CÁO DOANH THU HỌC BƠI NGÀY ${formatDateForDisplay(new Date())}`],
-            [],
-            [
-                "STT", "Số phiếu thu", "Mã thẻ", "Tên Học Viên", "SĐT",
-                "HLV Phụ Trách", "Gói Học", "Doanh thu", "Hình thức TT"
-            ]
-        ];
-
-        quickReportData.forEach((hv, index) => {
-            if (hv.hinhThucThanhToan === 'Tiền mặt') {
-                totalTienMat += hv.hocPhi;
-            } else if (hv.hinhThucThanhToan === 'Chuyển khoản') {
-                totalChuyenKhoan += hv.hocPhi;
-            }
-            totalDoanhThu += hv.hocPhi;
-
-            dataForSheet.push([
-                index + 1,
-                hv.soPhieuThu || '',
-                hv.maThe || '',
-                hv.tenHV,
-                hv.sdtHV,
-                hv.tenHLV,
-                hv.tenGoiHoc,
-                hv.hocPhi,
-                hv.hinhThucThanhToan || 'N/A'
-            ]);
-        });
-        
-        // Thêm dòng tổng
-        dataForSheet.push([]);
-        dataForSheet.push(["", "", "", "", "", "", "Tổng Tiền mặt:", totalTienMat]);
-        dataForSheet.push(["", "", "", "", "", "", "Tổng Chuyển khoản:", totalChuyenKhoan]);
-        dataForSheet.push(["", "", "", "", "", "", "TỔNG CỘNG:", totalDoanhThu]);
-
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
-        
-        ws['!cols'] = [
-            { wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, 
-            { wch: 25 }, { wch: 20 }, { wch: 15 }, { wch: 15 }
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, 'BaoCaoTrongNgay');
-        const fileName = `BaoCaoDoanhThu_${formatDateForInput(new Date())}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-
-    } catch (error) {
-        console.error("Lỗi khi xuất Excel Báo cáo nhanh:", error);
-        showModal(`Không thể xuất file Excel: ${error.message}`, "Lỗi");
-    }
-};
-qrExcelBtn.addEventListener('click', handleExportQuickReport);
