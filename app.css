@@ -76,39 +76,35 @@ input[type=number] {
     color: #9ca3af !important;
 }
 
-/* --- CSS CHO VIỆC IN PHIẾU --- */
-/* --- CSS CHUNG CHO IN ẤN (KHỔ NGANG - LANDSCAPE) --- */
+/* --- CSS CHUNG CHO IN ẤN (Đã sửa lỗi dư trang & Tối ưu khổ ngang) --- */
 @media print {
-    /* (SỬA) Chuyển sang khổ A4 Ngang */
     @page {
-        size: A4 landscape;
-        margin: 15mm; /* Lề vừa phải */
+        size: A4 landscape; /* Bắt buộc khổ ngang */
+        margin: 10mm; /* Lề nhỏ để tận dụng không gian */
     }
     
     /* Ẩn mọi thứ không cần thiết */
-    body.printing * {
-        visibility: hidden;
+    body.printing > *:not(#print-section) {
+        display: none !important;
     }
-    /* Chỉ hiển thị khu vực in và nội dung của nó */
-    #print-section, #print-section * {
-        visibility: visible;
-    }
-    /* Cấu hình trang in */
+
+    /* Hiển thị khu vực in */
     #print-section {
-        position: absolute;
-        left: 0;
-        top: 0;
+        display: block !important;
+        position: relative; /* Sửa lỗi dư trang: dùng relative thay vì absolute */
         width: 100%;
+        height: auto;
         margin: 0;
         padding: 0;
         font-family: 'Times New Roman', Times, serif;
         color: #000;
+        background: white;
     }
     
     /* Header chung */
     #print-header {
         text-align: center;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
     #print-header h4 {
         font-size: 14pt;
@@ -123,7 +119,7 @@ input[type=number] {
     }
     #print-title {
         text-align: center;
-        font-size: 18pt;
+        font-size: 16pt;
         font-weight: bold;
         margin-bottom: 15px;
         text-transform: uppercase;
@@ -132,34 +128,34 @@ input[type=number] {
     /* Phần chi tiết (Dùng cho Phiếu Ghi Danh) */
     #print-details {
         font-size: 12pt;
-        line-height: 1.5;
+        line-height: 1.4;
     }
     #print-details p {
-        margin-bottom: 5px;
+        margin-bottom: 4px;
     }
     #print-details strong {
         font-weight: bold;
-        min-width: 150px; /* Tăng chiều rộng nhãn cho dễ nhìn hơn trên khổ ngang */
+        min-width: 150px;
         display: inline-block;
     }
     
     /* Phần chữ ký chung */
     #print-signatures, #print-qr-signatures {
         display: flex;
-        justify-content: space-around; /* Chia đều khoảng cách trên khổ rộng */
-        margin-top: 30px;
-        font-size: 12pt; /* Tăng cỡ chữ ký */
-        page-break-inside: avoid; 
+        justify-content: space-around;
+        margin-top: 20px;
+        font-size: 12pt;
+        page-break-inside: avoid; /* Không ngắt trang giữa chữ ký */
     }
     .signature-box {
         text-align: center;
-        min-width: 150px; 
+        min-width: 150px;
     }
     .signature-box p {
         margin: 0;
     }
     .signature-box p:last-child {
-        margin-top: 60px; /* Tăng khoảng trống ký */
+        margin-top: 50px; /* Khoảng trống ký */
         font-style: italic;
     }
 
@@ -167,40 +163,38 @@ input[type=number] {
     #print-section table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 11pt; /* (SỬA) Tăng cỡ chữ lên 11pt vì khổ ngang rộng rãi */
-        margin-bottom: 15px;
+        font-size: 10pt; /* Cỡ chữ vừa phải cho bảng nhiều cột */
+        margin-bottom: 10px;
     }
     #print-section th, #print-section td {
-        border: 1px solid #000; 
-        padding: 6px; /* (SỬA) Tăng padding cho thoáng */
-        text-align: center; 
+        border: 1px solid #000;
+        padding: 5px;
+        text-align: center;
         vertical-align: middle;
     }
     #print-section th {
         font-weight: bold;
-        background-color: #f0f0f0 !important; 
-        -webkit-print-color-adjust: exact; 
+        background-color: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
     }
-    
-    /* Căn trái cho cột Tên (Cột 4 trong Daily Report) */
-    #print-section #qr-hv-table-body td:nth-child(4) { 
+    /* Căn trái cho tên để dễ đọc */
+    #print-section #qr-hv-table-body td:nth-child(4) {
         text-align: left;
     }
 
     /* Style riêng cho Báo cáo nhanh (Daily Report) */
     #print-qr-summary {
-        margin-top: 15px;
+        margin-top: 10px;
         font-size: 12pt;
-        text-align: right; 
-        padding-right: 40px; /* Thêm padding phải */
+        text-align: right;
+        padding-right: 20px;
     }
     #print-qr-summary p {
-        margin-bottom: 5px;
+        margin-bottom: 2px;
     }
 
-    /* Ẩn các nút khi in */
+    /* Ẩn nút In */
     .no-print {
         display: none !important;
     }
 }
-
