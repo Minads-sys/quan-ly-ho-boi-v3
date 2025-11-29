@@ -4,22 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý Hồ bơi HBA V3</title>
-    <!-- Tích hợp Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tùy chỉnh font Inter -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <!-- LIÊN KẾT FILE CSS CỦA BẠN -->
     <link rel="stylesheet" href="app.css">
-    <!-- Thư viện SheetJS (xlsx.js) cho Import/Export Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- 1. Màn hình chờ (Loader) toàn trang -->
     <div id="global-loader" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[100]">
         <div class="loader"></div>
     </div>
 
-    <!-- 2. Màn hình Đăng nhập (Mặc định hiển thị) -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center hidden">
         <div class="bg-white p-8 sm:p-10 rounded-xl shadow-lg w-full max-w-md">
             <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Đăng nhập HBA V3</h2>
@@ -43,18 +37,14 @@
         </div>
     </div>
 
-    <!-- 3. Giao diện ứng dụng chính (Mặc định ẩn) -->
     <div id="main-app" class="min-h-screen hidden">
-        <!-- Header -->
         <header class="bg-white shadow-md sticky top-0 z-30">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
-                    <!-- Logo/Title -->
                     <div class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold text-indigo-600">HBA V3</span>
+                        <span class="text-2xl font-bold text-indigo-600">GHI DANH HOC BOI Q6</span>
                     </div>
                     
-                    <!-- User Info & Logout -->
                     <div class="flex items-center gap-4">
                         <span id="user-email" class="text-sm text-gray-600 hidden sm:block">...</span>
                         <button id="logout-button" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
@@ -65,35 +55,27 @@
             </div>
         </header>
 
-        <!-- Tab Navigation -->
         <nav id="tab-navigation" class="bg-white shadow-sm sticky top-16 z-20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex gap-8 -mb-px">
-                    <!-- Tab Ghi Danh (Mặc định) -->
                     <button data-tab="ghi-danh" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-indigo-600 text-indigo-600 active-tab">
                         Ghi Danh
                     </button>
-                    <!-- Tab Quản lý HV -->
                     <button data-tab="ql-hv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         Quản lý HV
                     </button>
-                    <!-- Tab Quản lý HLV (Admin) -->
                     <button data-tab="ql-hlv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
                         Quản lý HLV
                     </button>
-                    <!-- Tab Báo cáo (Admin) -->
                     <button data-tab="bao-cao" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
                         Báo cáo
                     </button>
-                    <!-- Tab Import (Admin) -->
                     <button data-tab="import" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
                         Import
                     </button>
-                    <!-- Tab Cài Đặt (Admin) -->
                     <button data-tab="cai-dat" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
                         Cài Đặt
                     </button>
-                    <!-- Tab Quản lý Gói Học (Admin) -->
                     <button data-tab="goi-hoc" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
                         Quản lý Gói Học
                     </button>
@@ -101,18 +83,13 @@
             </div>
         </nav>
 
-        <!-- Main Content Area -->
         <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 1: Ghi Danh (Step 3a & 4a) -->
-                <!-- =================================== -->
                 <div id="content-ghi-danh" class="tab-panel active">
                     <h2 class="text-2xl font-semibold mb-6">Ghi Danh Học Viên Mới</h2>
                     
                     <form id="ghi-danh-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- Cột 1: Thông tin chính -->
                         <div class="md:col-span-2 space-y-5">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
@@ -158,20 +135,18 @@
                                     <label for="goiHoc" class="block text-sm font-medium text-gray-700">Gói Học <span class="text-red-500">*</span></label>
                                     <select id="goiHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
                                         <option value="">-- Chọn gói học --</option>
-                                        <!-- Nạp bằng JS -->
-                                    </select>
+                                        </select>
                                 </div>
-                                <!-- Thêm Hình thức thanh toán -->
                                 <div>
                                     <label for="hinhThucThanhToan" class="block text-sm font-medium text-gray-700">Hình thức thanh toán <span class="text-red-500">*</span></label>
                                     <select id="hinhThucThanhToan" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
                                         <option value="Tiền mặt">Tiền mặt</option>
                                         <option value="Chuyển khoản">Chuyển khoản</option>
+                                        <option value="Quẹt thẻ">Quẹt thẻ</option>
                                     </select>
                                 </div>
                             </div>
                             
-                            <!-- Chỉ định HLV (Admin only) -->
                             <div id="admin-chi-dinh-hlv" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50 admin-only">
                                 <div class="flex items-center">
                                     <input id="chkChiDinh" type="checkbox" class="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
@@ -181,15 +156,12 @@
                                     <label for="hlvChiDinh" class="block text-sm font-medium text-gray-700">Chọn HLV Chỉ Định</label>
                                     <select id="hlvChiDinh" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
                                         <option value="">-- Chọn HLV --</option>
-                                        <!-- Nạp HLV (Loại "Chỉ Định") bằng JS -->
-                                    </select>
+                                        </select>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Cột 2: Thông tin tài chính & Actions -->
                         <div class="md:col-span-1 space-y-6">
-                            <!-- Thông tin read-only -->
                             <div class="space-y-4 p-5 rounded-lg bg-gray-50 border border-gray-200">
                                 <div>
                                     <span class="block text-sm font-medium text-gray-500">Học Phí</span>
@@ -201,7 +173,6 @@
                                 </div>
                             </div>
 
-                            <!-- Nút Actions -->
                             <div class="space-y-3">
                                 <button type="submit" id="ghi-danh-submit-button" class="w-full flex justify-center items-center gap-3 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
                                     <span id="ghi-danh-spinner" class="loader-sm hidden"></span>
@@ -217,9 +188,7 @@
                         </div>
                     </form>
 
-                    <!-- BÁO CÁO NHANH LỄ TÂN -->
                     <div id="quick-report-section" class="mt-12 border-t pt-8">
-                        <!-- (MỚI) Thanh lọc ngày cho Báo cáo nhanh -->
                         <div class="flex flex-col sm:flex-row justify-between items-end mb-4 gap-4">
                             <h3 class="text-xl font-semibold text-gray-800">Báo cáo nhanh (Real-time)</h3>
                             <div class="flex gap-2 items-end">
@@ -237,31 +206,25 @@
                             </div>
                         </div>
                         
-                        <!-- 4 Thẻ thống kê -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <!-- Card 1 -->
                             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                                 <span class="block text-sm font-medium text-blue-700">Doanh thu (Lọc)</span>
                                 <span id="qr-dt-ngay" class="text-2xl font-bold text-blue-900">0 VNĐ</span>
                             </div>
-                            <!-- Card 2 -->
                             <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
                                 <span class="block text-sm font-medium text-green-700">Doanh thu tháng này</span>
                                 <span id="qr-dt-thang" class="text-2xl font-bold text-green-900">0 VNĐ</span>
                             </div>
-                            <!-- Card 3 -->
                             <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                                 <span class="block text-sm font-medium text-yellow-700">HV mới (Lọc)</span>
                                 <span id="qr-hv-ngay" class="text-2xl font-bold text-yellow-900">0</span>
                             </div>
-                            <!-- Card 4 (Tháng này) -->
                             <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
                                 <span class="block text-sm font-medium text-indigo-700">HV mới tháng này</span>
                                 <span id="qr-hv-thang" class="text-2xl font-bold text-indigo-900">0</span>
                             </div>
                         </div>
                         
-                        <!-- Bảng HV đăng ký trong ngày (9 Cột) -->
                         <div class="mt-6">
                             <div class="flex justify-between items-center mb-3">
                                 <h4 class="text-lg font-semibold text-gray-700">Danh sách học viên (Theo bộ lọc)</h4>
@@ -298,11 +261,7 @@
                     </div>
                 </div>
 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 2: Quản lý HV (Step 3b & Nâng cấp 3) -->
-                <!-- =================================== -->
                 <div id="content-ql-hv" class="tab-panel">
-                    <!-- Thêm 2 nút In/Xuất -->
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-semibold">Quản lý Học Viên</h2>
                         <div class="flex gap-2">
@@ -315,7 +274,6 @@
                         </div>
                     </div>
                     
-                    <!-- Thanh Lọc và Tìm kiếm -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div class="md:col-span-2">
                             <label for="hv-search-input" class="block text-sm font-medium text-gray-700">Tìm kiếm (Tên, SĐT, Mã Thẻ)</label>
@@ -324,7 +282,6 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Lọc nhanh</label>
                             <div class="mt-1 flex rounded-lg shadow-sm">
-                                <!-- Thêm nút "Hôm nay" và chia 3 cột -->
                                 <button id="filter-hv-today" class="filter-hv-btn relative inline-flex items-center justify-center w-1/3 px-4 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
                                     Hôm nay
                                 </button>
@@ -338,12 +295,10 @@
                         </div>
                     </div>
                     
-                    <!-- Bảng hiển thị Học Viên -->
                     <div class="overflow-x-auto rounded-lg shadow">
                         <table class="min-w-full divide-y divide-gray-200 bg-white">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <!-- Thêm cột STT, Mã Thẻ. Xóa cột tài chính -->
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Thẻ</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
@@ -356,16 +311,12 @@
                                 </tr>
                             </thead>
                             <tbody id="hocvien-table-body" class="divide-y divide-gray-200">
-                                <!-- Dữ liệu sẽ được chèn bằng JS -->
                                 <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách học viên...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 3: Quản lý HLV (Step 2c) -->
-                <!-- =================================== -->
                 <div id="content-ql-hlv" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-semibold">Quản lý Huấn Luyện Viên</h2>
@@ -374,7 +325,6 @@
                         </button>
                     </div>
                     
-                    <!-- Bảng hiển thị HLV -->
                     <div class="overflow-x-auto rounded-lg shadow">
                         <table class="min-w-full divide-y divide-gray-200 bg-white">
                             <thead class="bg-gray-50">
@@ -384,7 +334,6 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại HLV</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thứ tự Ưu tiên</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Đang Dạy</th>
-                                    <!-- Thêm cột Trạng thái -->
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                                     <th scope="col" class="relative px-6 py-3">
                                         <span class="sr-only">Hành động</span>
@@ -392,16 +341,12 @@
                                 </tr>
                             </thead>
                             <tbody id="hlv-table-body" class="divide-y divide-gray-200">
-                                <!-- Dữ liệu sẽ được chèn bằng JS -->
                                 <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách HLV...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 4: Báo cáo (Step 4b) -->
-                <!-- =================================== -->
                 <div id="content-bao-cao" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-semibold">Báo cáo Doanh Thu</h2>
@@ -415,25 +360,20 @@
                         </div>
                     </div>
 
-                    <!-- Khu vực Lọc -->
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                            <!-- Chọn loại báo cáo -->
                             <div>
                                 <label for="report-type" class="block text-sm font-medium text-gray-700">Loại Báo Cáo</label>
                                 <select id="report-type" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
                                     <option value="tongquan">Báo cáo Tổng quan</option>
                                     <option value="hlv">Báo cáo Thu nhập HLV</option>
-                                    <!-- Thêm Báo cáo chi tiết -->
                                     <option value="doanhthu_chitiet">Báo cáo Doanh thu (Chi tiết)</option>
                                 </select>
                             </div>
 
-                            <!-- Lọc nhanh -->
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Lọc nhanh theo thời gian</label>
                                 <div class="mt-1 flex rounded-lg shadow-sm">
-                                    <!-- Chia 4 cột -->
                                     <button id="report-filter-today" class="report-quick-filter-btn relative inline-flex items-center justify-center w-1/4 px-4 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
                                         Hôm nay
                                     </button>
@@ -443,20 +383,17 @@
                                     <button id="report-filter-last-month" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-4 py-3 border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
                                         Tháng trước
                                     </button>
-                                    <!-- Thêm nút Tùy chỉnh -->
                                     <button id="report-filter-custom" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-4 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
                                         Tùy chỉnh...
                                     </button>
                                 </div>
                             </div>
                             
-                            <!-- Nút Xem -->
                             <button id="report-view-btn" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                                 <span id="report-spinner" class="loader-sm hidden"></span>
                                 Xem Báo Cáo
                             </button>
                             
-                            <!-- Lọc tùy chỉnh (ẩn/hiện) -->
                             <div id="report-date-range" class="md:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 hidden">
                                 <div>
                                     <label for="report-start-date" class="block text-sm font-medium text-gray-700">Từ Ngày</label>
@@ -471,22 +408,16 @@
                         </div>
                     </div>
 
-                    <!-- Khu vực kết quả -->
                     <div id="report-results-container">
-                        <!-- Kết quả báo cáo sẽ được chèn bằng JS -->
                         <p class="text-center text-gray-500">Vui lòng chọn loại báo cáo và thời gian, sau đó nhấn "Xem Báo Cáo".</p>
                     </div>
                 </div>
 
 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 5: Import (Step 5a) -->
-                <!-- =================================== -->
                 <div id="content-import" class="tab-panel">
                     <h2 class="text-2xl font-semibold mb-6">Import Dữ liệu Học viên (Excel)</h2>
                     
                     <div class="max-w-xl space-y-6">
-                        <!-- Step 1: Upload -->
                         <div>
                             <label for="import-file-input" class="block text-sm font-medium text-gray-700">Chọn file (.xlsx, .xls)</label>
                             <input type="file" id="import-file-input" 
@@ -503,13 +434,11 @@
                             </p>
                         </div>
 
-                        <!-- Step 2: Button -->
                         <button id="import-start-btn" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                             <span id="import-spinner" class="loader-sm hidden"></span>
                             Tiến hành Import
                         </button>
 
-                        <!-- Step 3: Results Log -->
                         <div id="import-results-container" class="hidden">
                             <h3 class="text-lg font-medium text-gray-900">Kết quả Import</h3>
                             <div id="import-log" class="mt-2 p-4 bg-gray-900 text-white text-sm font-mono rounded-lg overflow-x-auto h-60">
@@ -519,9 +448,6 @@
                     </div>
                 </div>
 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 6: Cài Đặt (Step 2a) -->
-                <!-- =================================== -->
                 <div id="content-cai-dat" class="tab-panel">
                     <h2 class="text-2xl font-semibold mb-6">Cài Đặt Hệ Thống</h2>
                     <div class="max-w-md space-y-4">
@@ -540,9 +466,6 @@
                     </div>
                 </div>
 
-                <!-- =================================== -->
-                <!-- Nội dung Tab 7: Gói Học (Step 2b) -->
-                <!-- =================================== -->
                 <div id="content-goi-hoc" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-2xl font-semibold">Quản lý Gói Học</h2>
@@ -551,7 +474,6 @@
                         </button>
                     </div>
                     
-                    <!-- Bảng hiển thị Gói Học -->
                     <div class="overflow-x-auto rounded-lg shadow">
                         <table class="min-w-full divide-y divide-gray-200 bg-white">
                             <thead class="bg-gray-50">
@@ -566,7 +488,6 @@
                                 </tr>
                             </thead>
                             <tbody id="goi-hoc-table-body" class="divide-y divide-gray-200">
-                                <!-- Dữ liệu sẽ được chèn bằng JS -->
                                 <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách gói học...</td></tr>
                             </tbody>
                         </table>
@@ -577,11 +498,6 @@
         </main>
     </div>
 
-    <!-- =================================== -->
-    <!-- MODALS CỦA ỨNG DỤNG -->
-    <!-- =================================== -->
-
-    <!-- 4. Modal Thông báo (Chung) -->
     <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl">
             <h3 id="modal-title" class="text-xl font-semibold text-gray-900 mb-4">Thông báo</h3>
@@ -592,7 +508,6 @@
         </div>
     </div>
 
-    <!-- 5. Modal Xác nhận Xoá (Dùng chung) -->
     <div id="delete-confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl">
             <h3 class="text-xl font-semibold text-red-600 mb-4">Xác nhận Xoá</h3>
@@ -608,7 +523,6 @@
         </div>
     </div>
 
-    <!-- 6. Modal Thêm/Sửa Gói Học (Step 2b) -->
     <div id="goi-hoc-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-lg p-6 rounded-lg shadow-xl">
             <h3 id="goi-hoc-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Thêm Gói Học Mới</h3>
@@ -642,7 +556,6 @@
         </div>
     </div>
 
-    <!-- 7. Modal Thêm/Sửa HLV (Step 2c) -->
     <div id="hlv-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-lg p-6 rounded-lg shadow-xl">
             <h3 id="hlv-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Thêm HLV Mới</h3>
@@ -682,15 +595,12 @@
         </div>
     </div>
     
-    <!-- 8. (MỚI) Modal Sửa Học Viên (Step 3b) -->
     <div id="hocvien-edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-2xl p-6 rounded-lg shadow-xl">
             <h3 id="hocvien-edit-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Sửa Thông Tin Học Viên</h3>
             <form id="hocvien-edit-form" class="space-y-4">
                 <input type="hidden" id="hocvien-edit-id">
-                <input type="hidden" id="hocvien-edit-thoi-han"> <!-- Lưu thời hạn gốc -->
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="hidden" id="hocvien-edit-thoi-han"> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="hocvien-edit-ten" class="block text-sm font-medium text-gray-700">Tên Học Viên</label>
                         <input type="text" id="hocvien-edit-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
@@ -712,13 +622,13 @@
                     </div>
                 </div>
 
-                <!-- (NÂNG CẤP) Thêm Hình thức thanh toán -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label for="hocvien-edit-httt" class="block text-sm font-medium text-gray-700">Hình thức thanh toán</label>
                         <select id="hocvien-edit-httt" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
                             <option value="Tiền mặt">Tiền mặt</option>
                             <option value="Chuyển khoản">Chuyển khoản</option>
+                            <option value="Quẹt thẻ">Quẹt thẻ</option>
                         </select>
                     </div>
                 </div>
@@ -728,11 +638,9 @@
                         <label for="hocvien-edit-goihoc" class="block text-sm font-medium text-gray-700">Gói Học (Chỉ xem)</label>
                         <input type="text" id="hocvien-edit-goihoc" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
                     </div>
-                    <!-- (NÂNG CẤP) Đổi HLV từ Input sang Select -->
                     <div>
                         <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Có thể sửa)</label>
                         <select id="hocvien-edit-hlv" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                            <!-- Danh sách HLV sẽ được app.js nạp vào đây -->
                             <option value="">-- Đang tải danh sách HLV --</option>
                         </select>
                     </div>
@@ -762,15 +670,10 @@
         </div>
     </div>
 
-    <!-- 9. Khu vực In ấn (Ẩn) -->
     <div id="print-section" class="hidden">
-        <!-- Nội dung phiếu in sẽ được tạo bằng JS -->
-    </div>
+        </div>
 
 
-    <!-- =================================== -->
-    <!-- LIÊN KẾT FILE JAVASCRIPT CỦA BẠN -->
-    <!-- =================================== -->
     <script type="module" src="app.js"></script>
     
 </body>
