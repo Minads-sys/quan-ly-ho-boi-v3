@@ -23,7 +23,7 @@ import {
     writeBatch
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- CẤU HÌNH FIREBASE (Lấy từ file .docx) ---
+// --- CẤU HÌNH FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyCBe8S-LX-cR1ePQtI-zkJ1OqeosTqKyDk",
     authDomain: "ghi-danh-hoc-boi-q6-v3.firebaseapp.com",
@@ -168,11 +168,9 @@ const qrDtThang = document.getElementById('qr-dt-thang');
 const qrHvNgay = document.getElementById('qr-hv-ngay');
 const qrHvThang = document.getElementById('qr-hv-thang');
 const qrHvTableBody = document.getElementById('qr-hv-table-body');
-const qrPrintBtn = document.getElementById('qr-print-btn'); // (MỚI)
-const qrExcelBtn = document.getElementById('qr-excel-btn'); // (MỚI)
-// (MỚI) Element lọc ngày báo cáo nhanh
-const qrDateFilterInput = document.getElementById('qr-date-filter'); // Cần thêm vào HTML nếu chưa có
-const qrViewBtn = document.getElementById('qr-view-btn'); // Cần thêm vào HTML nếu chưa có
+const qrPrintBtn = document.getElementById('qr-print-btn');
+const qrExcelBtn = document.getElementById('qr-excel-btn');
+const qrViewBtn = document.getElementById('qr-view-btn');
 
 
 // Elements cho Tab Báo Cáo
@@ -909,15 +907,16 @@ const resetGhiDanhForm = () => {
 };
 ghiDanhResetButton.addEventListener('click', resetGhiDanhForm);
 
-const handlePrintPhieu = () => {
-    if (!lastRegisteredHocVien) {
-        showModal("Không có thông tin học viên để in.", "Lỗi");
-        return;
-    }
+// --- HÀM IN PHIẾU DÙNG CHUNG (MỚI) ---
+const printReceipt = (hv) => {
+    if (!hv) return;
+
+    // Xử lý ngày tháng an toàn
+    const ngayGhiDanh = (hv.ngayGhiDanh && hv.ngayGhiDanh.toDate) ? hv.ngayGhiDanh.toDate() : new Date(hv.ngayGhiDanh);
+    const ngayHetHan = (hv.ngayHetHan && hv.ngayHetHan.toDate) ? hv.ngayHetHan.toDate() : new Date(hv.ngayHetHan);
     
-    const hv = lastRegisteredHocVien;
-    const now = hv.ngayGhiDanh.toDate();
-    const gioGhiDanh = now.getHours();
+    // Logic xác định ca trực
+    const gioGhiDanh = ngayGhiDanh.getHours();
     const nguoiLapPhieu = gioGhiDanh < 12 ? "Lễ tân ca sáng" : "Lễ tân ca chiều";
     
     const printContent = `
@@ -927,8 +926,8 @@ const handlePrintPhieu = () => {
         </div>
         <h2 id="print-title">PHIẾU GHI DANH HỌC BƠI</h2>
         <div id="print-details">
-            <p><strong>Ngày giờ ghi danh:</strong> ${formatDateTimeForDisplay(hv.ngayGhiDanh)}</p>
-            <p><strong>Mã HV:</strong> ${hv.id.substring(0, 10).toUpperCase()}</p>
+            <p><strong>Ngày giờ ghi danh:</strong> ${formatDateTimeForDisplay(ngayGhiDanh)}</p>
+            <p><strong>Mã HV:</strong> ${hv.maThe || hv.id.substring(0, 10).toUpperCase()}</p>
             <p><strong>Số phiếu thu:</strong> ${hv.soPhieuThu || 'N/A'}</p>
             <p><strong>Hình thức TT:</strong> ${hv.hinhThucThanhToan || 'N/A'}</p>
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
@@ -937,7 +936,7 @@ const handlePrintPhieu = () => {
             <p><strong>Gói học:</strong> ${hv.tenGoiHoc} (${hv.soBuoi} buổi)</p>
             <p><strong>HLV phụ trách:</strong> ${hv.tenHLV}</p>
             <p><strong>Học phí:</strong> ${formatCurrency(hv.hocPhi)} VNĐ</p>
-            <p><strong>Ngày hết hạn:</strong> ${formatDateForDisplay(hv.ngayHetHan)}</p>
+            <p><strong>Ngày hết hạn:</strong> ${formatDateForDisplay(ngayHetHan)}</p>
         </div>
         <div id="print-signatures">
             <div class="signature-box">
@@ -961,6 +960,15 @@ const handlePrintPhieu = () => {
     window.print();
     document.body.classList.remove('printing');
     printSection.classList.add('hidden');
+};
+
+// Cập nhật hàm cũ để dùng hàm chung
+const handlePrintPhieu = () => {
+    if (!lastRegisteredHocVien) {
+        showModal("Không có thông tin học viên để in.", "Lỗi");
+        return;
+    }
+    printReceipt(lastRegisteredHocVien); 
     resetGhiDanhForm();
 };
 ghiDanhPrintButton.addEventListener('click', handlePrintPhieu);
@@ -1047,7 +1055,7 @@ if (document.getElementById('qr-view-btn')) {
     });
 }
 
-// In Báo cáo nhanh
+// In Báo cáo nhanh (ĐÃ CẬP NHẬT: Quẹt thẻ)
 const handlePrintQuickReport = () => {
     if (quickReportData.length === 0) {
         showModal("Không có dữ liệu để in.", "Lỗi");
@@ -1056,6 +1064,7 @@ const handlePrintQuickReport = () => {
     
     let totalTienMat = 0;
     let totalChuyenKhoan = 0;
+    let totalQuetThe = 0; // MỚI
     let totalDoanhThu = 0;
 
     const tableHTML = `
@@ -1077,6 +1086,8 @@ const handlePrintQuickReport = () => {
                 ${quickReportData.map((hv, index) => {
                     if (hv.hinhThucThanhToan === 'Tiền mặt') totalTienMat += hv.hocPhi;
                     else if (hv.hinhThucThanhToan === 'Chuyển khoản') totalChuyenKhoan += hv.hocPhi;
+                    else if (hv.hinhThucThanhToan === 'Quẹt thẻ') totalQuetThe += hv.hocPhi; // MỚI
+                    
                     totalDoanhThu += hv.hocPhi;
                     
                     return `
@@ -1109,7 +1120,7 @@ const handlePrintQuickReport = () => {
         <div id="print-qr-summary" style="margin-top: 20px; font-size: 12pt; text-align: right;">
             <p>Tổng Tiền mặt: <strong>${formatCurrency(totalTienMat)} VNĐ</strong></p>
             <p>Tổng Chuyển khoản: <strong>${formatCurrency(totalChuyenKhoan)} VNĐ</strong></p>
-            <p style="font-size: 14pt;">TỔNG CỘNG: <strong>${formatCurrency(totalDoanhThu)} VNĐ</strong></p>
+            <p>Tổng Quẹt thẻ: <strong>${formatCurrency(totalQuetThe)} VNĐ</strong></p> <p style="font-size: 14pt;">TỔNG CỘNG: <strong>${formatCurrency(totalDoanhThu)} VNĐ</strong></p>
         </div>
         <div id="print-qr-signatures" style="display: flex; justify-content: space-around; margin-top: 50px;">
             <div style="text-align: center;"><p><strong>Người lập phiếu</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
@@ -1127,7 +1138,7 @@ const handlePrintQuickReport = () => {
 };
 if(qrPrintBtn) qrPrintBtn.addEventListener('click', handlePrintQuickReport);
 
-// Xuất Excel Báo cáo nhanh
+// Xuất Excel Báo cáo nhanh (ĐÃ CẬP NHẬT: Quẹt thẻ)
 const handleExportQuickReport = () => {
     if (quickReportData.length === 0) {
         showModal("Không có dữ liệu để xuất Excel.", "Lỗi");
@@ -1135,7 +1146,7 @@ const handleExportQuickReport = () => {
     }
 
     try {
-        let totalTienMat = 0, totalChuyenKhoan = 0, totalDoanhThu = 0;
+        let totalTienMat = 0, totalChuyenKhoan = 0, totalQuetThe = 0, totalDoanhThu = 0;
         const dateLabel = document.getElementById('qr-date-from') && document.getElementById('qr-date-from').value 
             ? `${formatDateForDisplay(new Date(document.getElementById('qr-date-from').value))}` 
             : formatDateForDisplay(new Date());
@@ -1149,6 +1160,8 @@ const handleExportQuickReport = () => {
         quickReportData.forEach((hv, index) => {
             if (hv.hinhThucThanhToan === 'Tiền mặt') totalTienMat += hv.hocPhi;
             else if (hv.hinhThucThanhToan === 'Chuyển khoản') totalChuyenKhoan += hv.hocPhi;
+            else if (hv.hinhThucThanhToan === 'Quẹt thẻ') totalQuetThe += hv.hocPhi; // MỚI
+            
             totalDoanhThu += hv.hocPhi;
 
             dataForSheet.push([
@@ -1159,6 +1172,7 @@ const handleExportQuickReport = () => {
         dataForSheet.push([]);
         dataForSheet.push(["", "", "", "", "", "", "Tổng Tiền mặt:", totalTienMat]);
         dataForSheet.push(["", "", "", "", "", "", "Tổng Chuyển khoản:", totalChuyenKhoan]);
+        dataForSheet.push(["", "", "", "", "", "", "Tổng Quẹt thẻ:", totalQuetThe]); // MỚI
         dataForSheet.push(["", "", "", "", "", "", "TỔNG CỘNG:", totalDoanhThu]);
 
         const wb = XLSX.utils.book_new();
@@ -1219,7 +1233,10 @@ const renderHocVienTable = () => {
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV || 'N/A'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
+            
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium admin-only">
+                <button data-id="${hv.id}" class="print-hocvien-btn text-yellow-600 hover:text-yellow-900 mr-4" title="In lại phiếu">In</button>
+                
                 <button data-id="${hv.id}" class="edit-hocvien-btn text-indigo-600 hover:text-indigo-900">Sửa</button>
                 <button data-id="${hv.id}" data-name="${hv.tenHV}" class="delete-hocvien-btn text-red-600 hover:text-red-900 ml-4">Xoá</button>
             </td>
@@ -1263,6 +1280,15 @@ hocVienTableBody.addEventListener('click', (e) => {
     const target = e.target;
     const id = target.dataset.id;
     
+    // --- BẮT SỰ KIỆN NÚT IN ---
+    if (target.classList.contains('print-hocvien-btn')) {
+        const hocvien = globalHocVienList.find(hv => hv.id === id);
+        if (hocvien) {
+            printReceipt(hocvien);
+        }
+    }
+    // --------------------------
+
     if (target.classList.contains('edit-hocvien-btn')) {
         const hocvien = globalHocVienList.find(hv => hv.id === id);
         if (hocvien) openHocVienEditModal(hocvien);
