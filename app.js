@@ -1544,10 +1544,12 @@ const renderHLVReport = (data, startDate, endDate) => {
         const hlvId = hv.hlvId;
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
-            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 };
+            // CẬP NHẬT: Thêm khởi tạo tongHoaHong
+            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++;
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
+        reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong; // CẬP NHẬT: Cộng dồn hoa hồng từ DB
         reportByHLV[hlvId].tongThue += hv.thue;
         reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
@@ -1566,19 +1568,21 @@ const renderHLVReport = (data, startDate, endDate) => {
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Mới</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu Mang Về</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Hoa Hồng (Gross)</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuế Phải Nộp</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Thực Nhận (Sau Thuế)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thực Nhận (Net)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     ${reportArray.length === 0 
-                        ? `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu.</td></tr>`
+                        ? `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu.</td></tr>`
                         : reportArray.map(hlv => `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHVMoi}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">${formatCurrency(hlv.tongHoaHong)} VNĐ</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">${formatCurrency(hlv.tongThue)} VNĐ</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hlv.tongThucNhan)} VNĐ</td>
                             </tr>
@@ -2045,3 +2049,4 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
+
