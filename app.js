@@ -1681,26 +1681,29 @@ const generateTongQuanPrintHTML = (data) => {
 };
 
 const generateHLVReportPrintHTML = (data) => {
-    // (Giữ nguyên code cũ cho HLV)
     const reportByHLV = {};
     data.forEach(hv => {
         const hlvId = hv.hlvId;
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
-            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 };
+            // CẬP NHẬT: Thêm tongHoaHong
+            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
-        reportByHLV[hlvId].soHVMoi++; reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; reportByHLV[hlvId].tongThue += hv.thue; reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
+        reportByHLV[hlvId].soHVMoi++; 
+        reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
+        reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong; // CẬP NHẬT
+        reportByHLV[hlvId].tongThue += hv.thue; 
+        reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
     const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
 
     return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 12pt;">
-            <thead style="background-color: #f3f4f6;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11pt;"> <thead style="background-color: #f3f4f6;">
                 <tr>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tên HLV</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Số HV</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tổng Doanh Thu</th>
-                    <th style="border: 1px solid #ddd; padding: 8px;">Thuế Phải Nộp</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Tổng Hoa Hồng</th> <th style="border: 1px solid #ddd; padding: 8px;">Thuế</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Thực Nhận</th>
                 </tr>
             </thead>
@@ -1710,7 +1713,7 @@ const generateHLVReportPrintHTML = (data) => {
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHVMoi}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongDoanhThu)}</td>
-                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongThue)}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongHoaHong)}</td> <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongThue)}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongThucNhan)}</td>
                     </tr>
                 `).join('')}
@@ -1841,23 +1844,41 @@ const handleExportExcel = () => {
                 ["Tổng HLV Thực Nhận (Net)", totalHlvNet]
             ];
         
+        // ... Bên trong hàm handleExportExcel ...
+
         } else if (currentReportType === 'hlv') {
-            // (Giữ nguyên code HLV)
             sheetName = `ThuNhapHLV_${dateRangeStr}`;
             const reportByHLV = {};
             currentReportData.forEach(hv => {
-                if (!hv.hlvId) return;
-                if (!reportByHLV[hv.hlvId]) { reportByHLV[hv.hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongThue: 0, tongThucNhan: 0 }; }
-                reportByHLV[hlvId].soHVMoi++; reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; reportByHLV[hlvId].tongThue += hv.thue; reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
+                const hlvId = hv.hlvId;
+                if (!hlvId) return;
+                if (!reportByHLV[hlvId]) { 
+                    // CẬP NHẬT
+                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 }; 
+                }
+                reportByHLV[hlvId].soHVMoi++; 
+                reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
+                reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong; // CẬP NHẬT
+                reportByHLV[hlvId].tongThue += hv.thue; 
+                reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
+            
+            // CẬP NHẬT HEADER EXCEL
             dataForSheet = [
                 ["BÁO CÁO THU NHẬP HLV"], [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`], [],
-                ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu Mang Về", "Thuế Phải Nộp", "Tổng Thực Nhận (Sau Thuế)"]
+                ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu", "Tổng Hoa Hồng (Gross)", "Thuế Phải Nộp", "Thực Nhận (Net)"]
             ];
             reportArray.forEach(hlv => {
-                dataForSheet.push([hlv.tenHLV, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongThue, hlv.tongThucNhan]);
+                // CẬP NHẬT DÒNG DỮ LIỆU
+                dataForSheet.push([hlv.tenHLV, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
             });
+            
+            // Cập nhật độ rộng cột (Thêm 1 cột)
+            ws['!cols'] = [ { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
+        
+        } 
+// ...
         
         } else if (currentReportType === 'doanhthu_chitiet') {
             sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
@@ -2049,4 +2070,5 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
+
 
