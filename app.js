@@ -1538,13 +1538,13 @@ const renderTongQuanReport = (data, startDate, endDate) => {
     reportResultsContainer.innerHTML = html;
 };
 
+// CẬP NHẬT: Thêm cột Tổng Hoa Hồng
 const renderHLVReport = (data, startDate, endDate) => {
     const reportByHLV = {};
     data.forEach(hv => {
         const hlvId = hv.hlvId;
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
-            // CẬP NHẬT: Thêm khởi tạo tongHoaHong
             reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++;
@@ -1680,13 +1680,13 @@ const generateTongQuanPrintHTML = (data) => {
     `;
 };
 
+// CẬP NHẬT: Thêm cột Tổng Hoa Hồng
 const generateHLVReportPrintHTML = (data) => {
     const reportByHLV = {};
     data.forEach(hv => {
         const hlvId = hv.hlvId;
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
-            // CẬP NHẬT: Thêm tongHoaHong
             reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++; 
@@ -1698,7 +1698,8 @@ const generateHLVReportPrintHTML = (data) => {
     const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
 
     return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 11pt;"> <thead style="background-color: #f3f4f6;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11pt;">
+            <thead style="background-color: #f3f4f6;">
                 <tr>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tên HLV</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Số HV</th>
@@ -1844,8 +1845,6 @@ const handleExportExcel = () => {
                 ["Tổng HLV Thực Nhận (Net)", totalHlvNet]
             ];
         
-        // ... Bên trong hàm handleExportExcel ...
-
         } else if (currentReportType === 'hlv') {
             sheetName = `ThuNhapHLV_${dateRangeStr}`;
             const reportByHLV = {};
@@ -1853,7 +1852,6 @@ const handleExportExcel = () => {
                 const hlvId = hv.hlvId;
                 if (!hlvId) return;
                 if (!reportByHLV[hlvId]) { 
-                    // CẬP NHẬT
                     reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 }; 
                 }
                 reportByHLV[hlvId].soHVMoi++; 
@@ -1874,11 +1872,7 @@ const handleExportExcel = () => {
                 dataForSheet.push([hlv.tenHLV, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
             });
             
-            // Cập nhật độ rộng cột (Thêm 1 cột)
             ws['!cols'] = [ { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
-        
-        } 
-// ...
         
         } else if (currentReportType === 'doanhthu_chitiet') {
             sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
@@ -1897,19 +1891,11 @@ const handleExportExcel = () => {
                     hv.hinhThucThanhToan || 'N/A', hv.hbaNhan, hv.tongHoaHong, hv.thue, hv.hlvThucNhan
                 ]);
             });
+            ws['!cols'] = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
         }
 
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
-        
-        if (currentReportType === 'hlv') {
-            ws['!cols'] = [ { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 30 } ];
-        } else if (currentReportType === 'tongquan') {
-            ws['!cols'] = [ { wch: 30 }, { wch: 25 } ];
-        } else if (currentReportType === 'doanhthu_chitiet') {
-            ws['!cols'] = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
-        }
-
         XLSX.utils.book_append_sheet(wb, ws, 'BaoCao');
         const fileName = `BaoCao_${sheetName}.xlsx`;
         XLSX.writeFile(wb, fileName);
@@ -2070,5 +2056,3 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
-
-
