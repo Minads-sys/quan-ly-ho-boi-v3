@@ -1815,6 +1815,7 @@ const handlePrintReport = () => {
 };
 reportPrintBtn.addEventListener('click', handlePrintReport);
 
+// Thay thế hàm handleExportExcel cũ bằng đoạn này
 const handleExportExcel = () => {
     if (currentReportData.length === 0 && (currentReportType === 'tongquan' || currentReportType === 'doanhthu_chitiet')) {
         // Cho phép xuất rỗng
@@ -1825,12 +1826,13 @@ const handleExportExcel = () => {
 
     let dataForSheet = [];
     let sheetName = "BaoCao";
+    let colWidths = []; // Biến lưu độ rộng cột
+
     const { startDate, endDate } = currentReportParams;
     const dateRangeStr = `${formatDateForInput(startDate)}_den_${formatDateForInput(endDate)}`;
 
     try {
         if (currentReportType === 'tongquan') {
-            // (Giữ nguyên code Tong Quan)
             sheetName = `TongQuan_${dateRangeStr}`;
             let totalRevenue = 0, totalHbaNhan = 0, totalHlvGross = 0, totalThue = 0, totalHlvNet = 0;
             currentReportData.forEach(hv => {
@@ -1844,6 +1846,8 @@ const handleExportExcel = () => {
                 ["Tổng Hoa Hồng HLV (Gross)", totalHlvGross], [`Tổng Thuế TNCN (${globalRateTax}%)`, totalThue],
                 ["Tổng HLV Thực Nhận (Net)", totalHlvNet]
             ];
+            // Cấu hình độ rộng cột cho Tổng quan
+            colWidths = [ { wch: 30 }, { wch: 25 } ];
         
         } else if (currentReportType === 'hlv') {
             sheetName = `ThuNhapHLV_${dateRangeStr}`;
@@ -1856,23 +1860,22 @@ const handleExportExcel = () => {
                 }
                 reportByHLV[hlvId].soHVMoi++; 
                 reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
-                reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong; // CẬP NHẬT
+                reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong;
                 reportByHLV[hlvId].tongThue += hv.thue; 
                 reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
             
-            // CẬP NHẬT HEADER EXCEL
             dataForSheet = [
                 ["BÁO CÁO THU NHẬP HLV"], [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`], [],
                 ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu", "Tổng Hoa Hồng (Gross)", "Thuế Phải Nộp", "Thực Nhận (Net)"]
             ];
             reportArray.forEach(hlv => {
-                // CẬP NHẬT DÒNG DỮ LIỆU
                 dataForSheet.push([hlv.tenHLV, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
             });
             
-            ws['!cols'] = [ { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
+            // Cấu hình độ rộng cột cho HLV
+            colWidths = [ { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
         
         } else if (currentReportType === 'doanhthu_chitiet') {
             sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
@@ -1891,11 +1894,18 @@ const handleExportExcel = () => {
                     hv.hinhThucThanhToan || 'N/A', hv.hbaNhan, hv.tongHoaHong, hv.thue, hv.hlvThucNhan
                 ]);
             });
-            ws['!cols'] = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
+            // Cấu hình độ rộng cột cho Chi tiết
+            colWidths = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
         }
 
+        // --- ĐÂY LÀ PHẦN SỬA LỖI QUAN TRỌNG ---
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+        const ws = XLSX.utils.aoa_to_sheet(dataForSheet); // Tạo worksheet sau khi đã có dữ liệu
+        
+        if (colWidths.length > 0) {
+            ws['!cols'] = colWidths; // Áp dụng độ rộng cột sau khi tạo worksheet
+        }
+
         XLSX.utils.book_append_sheet(wb, ws, 'BaoCao');
         const fileName = `BaoCao_${sheetName}.xlsx`;
         XLSX.writeFile(wb, fileName);
@@ -2056,3 +2066,4 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
+
