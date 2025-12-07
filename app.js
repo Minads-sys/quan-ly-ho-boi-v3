@@ -49,7 +49,7 @@ let globalHocVienList = []; // Danh sách gốc từ Firestore
 let filteredHocVienList = []; // Danh sách đã lọc/tìm kiếm để hiển thị
 let currentDeleteInfo = { type: null, id: null }; // Để modal xoá biết xoá gì
 let lastRegisteredHocVien = null; // Lưu HV vừa ghi danh để In
-let quickReportData = []; // (NÂNG CẤP "Daily Report") Lưu HV trong ngày
+let quickReportData = []; // Lưu HV trong ngày cho báo cáo nhanh
 
 // Biến lưu các hàm unsubscribe listeners
 let unsubGoiHoc = null;
@@ -139,7 +139,14 @@ const hvSearchInput = document.getElementById('hv-search-input');
 const filterBtnHomNay = document.getElementById('filter-hv-today');
 const filterBtnThangNay = document.getElementById('filter-hv-thangnay');
 const filterBtnTatCa = document.getElementById('filter-hv-tatca');
+// --- Elements Mới cho bộ lọc tùy chỉnh ---
+const filterBtnTuyChinh = document.getElementById('filter-hv-tuychinh');
+const hvCustomFilterContainer = document.getElementById('hv-custom-filter-container');
+const hvDateFromInput = document.getElementById('hv-date-from');
+const hvDateToInput = document.getElementById('hv-date-to');
+const hvCustomApplyBtn = document.getElementById('hv-custom-filter-apply');
 let currentHVFilter = 'thangnay';
+// ----------------------------------------
 const hvListPrintBtn = document.getElementById('hv-list-print-btn');
 const hvListExcelBtn = document.getElementById('hv-list-excel-btn');
 
@@ -1201,6 +1208,20 @@ const applyHocVienFilterAndRender = () => {
     } else if (currentHVFilter === 'today') {
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         list = list.filter(hv => hv.ngayGhiDanh.toDate() >= startOfToday);
+    } else if (currentHVFilter === 'custom') { // --- LOGIC MỚI: LỌC TÙY CHỈNH ---
+        const fromDateVal = hvDateFromInput.value;
+        const toDateVal = hvDateToInput.value;
+        
+        if (fromDateVal && toDateVal) {
+            const startDate = new Date(fromDateVal);
+            const endDate = new Date(toDateVal);
+            endDate.setHours(23, 59, 59); // Lấy hết ngày cuối cùng
+            
+            list = list.filter(hv => {
+                const nd = hv.ngayGhiDanh.toDate();
+                return nd >= startDate && nd <= endDate;
+            });
+        }
     }
     
     const searchTerm = hvSearchInput.value.toLowerCase().trim();
@@ -1247,7 +1268,8 @@ const renderHocVienTable = () => {
 hvSearchInput.addEventListener('input', applyHocVienFilterAndRender);
 
 const updateHVFilterButtons = (activeBtn) => {
-    const buttons = [filterBtnHomNay, filterBtnThangNay, filterBtnTatCa];
+    // Thêm filterBtnTuyChinh vào mảng nút
+    const buttons = [filterBtnHomNay, filterBtnThangNay, filterBtnTatCa, filterBtnTuyChinh];
     buttons.forEach(btn => {
         if (btn) {
             btn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700');
@@ -1262,17 +1284,43 @@ const updateHVFilterButtons = (activeBtn) => {
 
 filterBtnHomNay.addEventListener('click', () => {
     currentHVFilter = 'today';
+    hvCustomFilterContainer.classList.add('hidden'); // Ẩn khung chọn ngày
     updateHVFilterButtons(filterBtnHomNay);
     applyHocVienFilterAndRender();
 });
+
 filterBtnThangNay.addEventListener('click', () => {
     currentHVFilter = 'thangnay';
+    hvCustomFilterContainer.classList.add('hidden'); // Ẩn khung chọn ngày
     updateHVFilterButtons(filterBtnThangNay);
     applyHocVienFilterAndRender();
 });
+
 filterBtnTatCa.addEventListener('click', () => {
     currentHVFilter = 'tatca';
+    hvCustomFilterContainer.classList.add('hidden'); // Ẩn khung chọn ngày
     updateHVFilterButtons(filterBtnTatCa);
+    applyHocVienFilterAndRender();
+});
+
+// --- SỰ KIỆN CHO NÚT TÙY CHỈNH ---
+filterBtnTuyChinh.addEventListener('click', () => {
+    currentHVFilter = 'custom';
+    hvCustomFilterContainer.classList.remove('hidden'); // Hiện khung chọn ngày
+    
+    // Tự động điền ngày hôm nay nếu đang trống
+    if (!hvDateFromInput.value) hvDateFromInput.value = formatDateForInput(new Date());
+    if (!hvDateToInput.value) hvDateToInput.value = formatDateForInput(new Date());
+    
+    updateHVFilterButtons(filterBtnTuyChinh);
+    // Chưa gọi apply ngay, đợi người dùng bấm nút "Lọc dữ liệu"
+});
+
+hvCustomApplyBtn.addEventListener('click', () => {
+    if (!hvDateFromInput.value || !hvDateToInput.value) {
+        showModal("Vui lòng chọn đầy đủ Từ ngày và Đến ngày.", "Thiếu thông tin");
+        return;
+    }
     applyHocVienFilterAndRender();
 });
 
@@ -1815,7 +1863,7 @@ const handlePrintReport = () => {
 };
 reportPrintBtn.addEventListener('click', handlePrintReport);
 
-// Thay thế hàm handleExportExcel cũ bằng đoạn này
+// --- HÀM XUẤT EXCEL ĐÃ SỬA LỖI ---
 const handleExportExcel = () => {
     if (currentReportData.length === 0 && (currentReportType === 'tongquan' || currentReportType === 'doanhthu_chitiet')) {
         // Cho phép xuất rỗng
@@ -1898,7 +1946,6 @@ const handleExportExcel = () => {
             colWidths = [ { wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 } ];
         }
 
-        // --- ĐÂY LÀ PHẦN SỬA LỖI QUAN TRỌNG ---
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(dataForSheet); // Tạo worksheet sau khi đã có dữ liệu
         
@@ -2066,4 +2113,3 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
-
