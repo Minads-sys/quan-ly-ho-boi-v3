@@ -1238,11 +1238,14 @@ const applyHocVienFilterAndRender = () => {
     renderHocVienTable();
 };
 
+// Thay thế hàm renderHocVienTable cũ trong file app.js
+
 const renderHocVienTable = () => {
     if (!hocVienTableBody) return;
     
     if (filteredHocVienList.length === 0) {
-        hocVienTableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Không tìm thấy học viên nào.</td></tr>`;
+        // Cập nhật colspan thành 8 vì đã thêm 1 cột
+        hocVienTableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Không tìm thấy học viên nào.</td></tr>`;
         return;
     }
     
@@ -1252,12 +1255,14 @@ const renderHocVienTable = () => {
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.maThe || ''}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
+            
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatDateTimeForDisplay(hv.ngayGhiDanh)}</td>
+            
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV || 'N/A'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
             
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium admin-only">
                 <button data-id="${hv.id}" class="print-hocvien-btn text-yellow-600 hover:text-yellow-900 mr-4" title="In lại phiếu">In</button>
-                
                 <button data-id="${hv.id}" class="edit-hocvien-btn text-indigo-600 hover:text-indigo-900">Sửa</button>
                 <button data-id="${hv.id}" data-name="${hv.tenHV}" class="delete-hocvien-btn text-red-600 hover:text-red-900 ml-4">Xoá</button>
             </td>
@@ -2113,3 +2118,4 @@ const handleImportStart = () => {
     reader.readAsBinaryString(file);
 };
 importStartBtn.addEventListener('click', handleImportStart);
+
