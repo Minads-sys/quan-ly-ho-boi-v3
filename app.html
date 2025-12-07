@@ -262,79 +262,81 @@
                 </div>
 
                 <div id="content-ql-hv" class="tab-panel">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold">Quản lý Học Viên</h2>
-                        <div class="flex gap-2">
-                            <button id="hv-list-print-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                                In Danh Sách
-                            </button>
-                            <button id="hv-list-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-                                Xuất Excel
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="md:col-span-2">
-                            <label for="hv-search-input" class="block text-sm font-medium text-gray-700">Tìm kiếm (Tên, SĐT, Mã Thẻ)</label>
-                            <input type="search" id="hv-search-input" placeholder="Nhập từ khoá..." class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-    <label class="block text-sm font-medium text-gray-700">Lọc nhanh</label>
-    
-    <div class="mt-1 flex rounded-lg shadow-sm">
-        <button id="filter-hv-today" class="filter-hv-btn relative inline-flex items-center justify-center w-1/4 px-2 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-            Hôm nay
-        </button>
-        <button id="filter-hv-thangnay" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none hover:bg-indigo-700">
-            Tháng Này
-        </button>
-        <button id="filter-hv-tuychinh" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-            Tùy chỉnh...
-        </button>
-        <button id="filter-hv-tatca" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-            Tải Toàn Bộ
-        </button>
-    </div>
-
-    <div id="hv-custom-filter-container" class="hidden mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-md">
-        <div class="flex flex-col sm:flex-row gap-3 items-end">
-            <div class="w-full sm:w-auto">
-                <label for="hv-date-from" class="block text-xs font-medium text-gray-600">Từ ngày</label>
-                <input type="date" id="hv-date-from" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-            </div>
-            <div class="w-full sm:w-auto">
-                <label for="hv-date-to" class="block text-xs font-medium text-gray-600">Đến ngày</label>
-                <input type="date" id="hv-date-to" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-            </div>
-            <button id="hv-custom-filter-apply" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors text-sm shadow-sm">
-                Lọc dữ liệu
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold">Quản lý Học Viên</h2>
+        <div class="flex gap-2">
+            <button id="hv-list-print-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                In Danh Sách
+            </button>
+            <button id="hv-list-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                Xuất Excel
             </button>
         </div>
     </div>
-</div>
-                    
-                    <div class="overflow-x-auto rounded-lg shadow">
-                        <table class="min-w-full divide-y divide-gray-200 bg-white">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Thẻ</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
-                                    <th scope="col" class="relative px-6 py-3 admin-only">
-                                        <span class="sr-only">Hành động</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody id="hocvien-table-body" class="divide-y divide-gray-200">
-                                <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách học viên...</td></tr>
-                            </tbody>
-                        </table>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class=""> 
+            <label for="hv-search-input" class="block text-sm font-medium text-gray-700">Tìm kiếm (Tên, SĐT, Mã Thẻ)</label>
+            <input type="search" id="hv-search-input" placeholder="Nhập từ khoá..." class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+
+        <div class="md:col-span-2"> 
+            <label class="block text-sm font-medium text-gray-700">Lọc nhanh</label>
+            <div class="mt-1 flex rounded-lg shadow-sm">
+                <button id="filter-hv-today" class="filter-hv-btn relative inline-flex items-center justify-center w-1/4 px-2 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
+                    Hôm nay
+                </button>
+                <button id="filter-hv-thangnay" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none hover:bg-indigo-700">
+                    Tháng Này
+                </button>
+                <button id="filter-hv-tuychinh" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
+                    Tùy chỉnh...
+                </button>
+                <button id="filter-hv-tatca" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
+                    Tải Toàn Bộ
+                </button>
+            </div>
+
+            <div id="hv-custom-filter-container" class="hidden mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-md">
+                <div class="flex flex-col sm:flex-row gap-3 items-end">
+                    <div class="w-full sm:w-auto">
+                        <label for="hv-date-from" class="block text-xs font-medium text-gray-600">Từ ngày</label>
+                        <input type="date" id="hv-date-from" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
+                    <div class="w-full sm:w-auto">
+                        <label for="hv-date-to" class="block text-xs font-medium text-gray-600">Đến ngày</label>
+                        <input type="date" id="hv-date-to" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <button id="hv-custom-filter-apply" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors text-sm shadow-sm">
+                        Lọc dữ liệu
+                    </button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto rounded-lg shadow">
+        <table class="min-w-full divide-y divide-gray-200 bg-white">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Thẻ</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày Ghi Danh</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
+                    <th scope="col" class="relative px-6 py-3 admin-only">
+                        <span class="sr-only">Hành động</span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="hocvien-table-body" class="divide-y divide-gray-200">
+                <tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách học viên...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
                 <div id="content-ql-hlv" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
@@ -697,4 +699,5 @@
     
 </body>
 </html>
+
 
