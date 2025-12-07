@@ -2117,5 +2117,121 @@ const handleImportStart = () => {
     };
     reader.readAsBinaryString(file);
 };
+// --- BỔ SUNG: LOGIC IN & XUẤT EXCEL CHO TAB QUẢN LÝ HV ---
+
+// 1. Hàm Xử lý In Danh sách Học viên
+const handlePrintStudentList = () => {
+    if (!filteredHocVienList || filteredHocVienList.length === 0) {
+        showModal("Không có dữ liệu học viên để in.", "Lỗi");
+        return;
+    }
+
+    const tableRows = filteredHocVienList.map((hv, index) => `
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${index + 1}</td>
+            <td style="border: 1px solid #ddd; padding: 6px;">${hv.maThe || ''}</td>
+            <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
+            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${hv.sdtHV}</td>
+            <td style="border: 1px solid #ddd; padding: 6px; text-align: center;">${formatDateForDisplay(hv.ngayGhiDanh)}</td>
+            <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV || ''}</td>
+            <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
+        </tr>
+    `).join('');
+
+    const printContent = `
+        <div id="print-header">
+            <h4>CÂU LẠC BỘ BƠI LỘI PHÚ LÂM</h4>
+            <h5>Hồ bơi HBA Phú Lâm</h5>
+        </div>
+        <h2 id="print-title">DANH SÁCH HỌC VIÊN</h2>
+        <p style="text-align: center; margin-bottom: 15px;">Ngày in: ${formatDateForDisplay(new Date())}</p>
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 10pt;">
+            <thead style="background-color: #f3f4f6;">
+                <tr>
+                    <th style="border: 1px solid #ddd; padding: 6px;">STT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Mã Thẻ</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Tên Học Viên</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">SĐT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Ngày Ghi Danh</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">HLV Phụ Trách</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Gói Học</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+    `;
+
+    const printSection = document.getElementById('print-section');
+    printSection.innerHTML = printContent;
+    printSection.classList.remove('hidden');
+    document.body.classList.add('printing');
+    window.print();
+    document.body.classList.remove('printing');
+    printSection.classList.add('hidden');
+};
+
+// 2. Hàm Xử lý Xuất Excel Danh sách Học viên
+const handleExportStudentList = () => {
+    if (!filteredHocVienList || filteredHocVienList.length === 0) {
+        showModal("Không có dữ liệu học viên để xuất Excel.", "Lỗi");
+        return;
+    }
+
+    try {
+        const dataForSheet = [
+            ["DANH SÁCH HỌC VIÊN"],
+            [`Ngày xuất: ${formatDateForDisplay(new Date())}`],
+            [],
+            ["STT", "Mã Thẻ", "Tên Học Viên", "SĐT", "Ngày Ghi Danh", "HLV Phụ Trách", "Gói Học", "Học Phí", "Trạng Thái"]
+        ];
+
+        filteredHocVienList.forEach((hv, index) => {
+            dataForSheet.push([
+                index + 1,
+                hv.maThe || '',
+                hv.tenHV,
+                hv.sdtHV,
+                formatDateForDisplay(hv.ngayGhiDanh),
+                hv.tenHLV || '',
+                hv.tenGoiHoc,
+                hv.hocPhi,
+                hv.active !== false ? "Hoạt động" : "Đã nghỉ"
+            ]);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+        
+        // Cấu hình độ rộng cột
+        ws['!cols'] = [
+            { wch: 5 },  // STT
+            { wch: 15 }, // Ma The
+            { wch: 25 }, // Ten
+            { wch: 15 }, // SDT
+            { wch: 15 }, // Ngay
+            { wch: 25 }, // HLV
+            { wch: 25 }, // Goi Hoc
+            { wch: 15 }, // Hoc Phi
+            { wch: 15 }  // Trang thai
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'DanhSachHV');
+        XLSX.writeFile(wb, `DanhSachHocVien_${formatDateForInput(new Date())}.xlsx`);
+
+    } catch (error) {
+        console.error("Lỗi xuất Excel:", error);
+        showModal(`Lỗi xuất Excel: ${error.message}`, "Lỗi");
+    }
+};
+// ... (Các dòng code cuối cùng của file app.js)
+
 importStartBtn.addEventListener('click', handleImportStart);
+
+// --- THÊM 2 DÒNG NÀY ---
+if (hvListPrintBtn) hvListPrintBtn.addEventListener('click', handlePrintStudentList);
+if (hvListExcelBtn) hvListExcelBtn.addEventListener('click', handleExportStudentList);
+
 
