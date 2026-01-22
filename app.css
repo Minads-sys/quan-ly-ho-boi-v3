@@ -155,7 +155,7 @@ input[type=number] {
         margin: 0;
     }
     .signature-box p:last-child {
-        margin-top: 50px; /* Khoảng trống ký */
+        margin-top: 5px; /* Khoảng trống ký */
         font-style: italic;
     }
 
@@ -198,3 +198,4 @@ input[type=number] {
         display: none !important;
     }
 }
+
