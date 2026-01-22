@@ -944,6 +944,7 @@ const printReceipt = (hv) => {
             <p><strong>HLV phụ trách:</strong> ${hv.tenHLV}</p>
             <p><strong>Học phí:</strong> ${formatCurrency(hv.hocPhi)} VNĐ</p>
             <p><strong>Ngày hết hạn:</strong> ${formatDateForDisplay(ngayHetHan)}</p>
+            <h2 id="print-title">Phiếu đã in không được phép sửa/xóa, mọi thay đổi vui lòng liên hệ hotline 0909932627 để được hỗ trợ, LỄ TÂN VÀ HUẤN LUYỆN VIÊN KHÔNG ĐƯỢC THAY ĐỔI THÔNG TIN TRÊN PHIẾU</h2>
         </div>
         <div id="print-signatures">
             <div class="signature-box">
@@ -2233,5 +2234,6 @@ importStartBtn.addEventListener('click', handleImportStart);
 // --- THÊM 2 DÒNG NÀY ---
 if (hvListPrintBtn) hvListPrintBtn.addEventListener('click', handlePrintStudentList);
 if (hvListExcelBtn) hvListExcelBtn.addEventListener('click', handleExportStudentList);
+
 
 
