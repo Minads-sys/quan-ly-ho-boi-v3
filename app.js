@@ -946,7 +946,7 @@ const printReceipt = (hv) => {
             <p><strong>Ngày hết hạn:</strong> ${formatDateForDisplay(ngayHetHan)}</p>
         </div>
         <div style="border: 2px solid #000000; padding: 10px; margin-top: 20px; text-align: center; color: #000000;">
-    <p style="margin-bottom: 5px; font-size: 14px;">
+    <p style="margin-bottom: 5px; bold; font-size: 16px;">
         Phiếu đã in không được phép sửa/xóa, mọi thay đổi vui lòng liên hệ hotline <strong>0909932627</strong> để được hỗ trợ.
     </p>
     <p style="margin: 0; font-weight: bold; text-transform: uppercase; font-size: 15px;">
@@ -2241,6 +2241,7 @@ importStartBtn.addEventListener('click', handleImportStart);
 // --- THÊM 2 DÒNG NÀY ---
 if (hvListPrintBtn) hvListPrintBtn.addEventListener('click', handlePrintStudentList);
 if (hvListExcelBtn) hvListExcelBtn.addEventListener('click', handleExportStudentList);
+
 
 
 
