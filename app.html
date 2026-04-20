@@ -41,8 +41,13 @@
         <header class="bg-white shadow-md sticky top-0 z-30">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
-                    <div class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold text-indigo-600">GHI DANH HOC BOI Q6</span>
+                    <div class="flex-shrink-0 flex items-center gap-3">
+                        <button id="mobile-menu-btn" class="sm:hidden p-2 text-gray-600 hover:text-indigo-600 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                        <span class="text-xl sm:text-2xl font-bold text-indigo-600">GHI DANH HỌC BƠI Q6</span>
                     </div>
                     
                     <div class="flex items-center gap-4">
@@ -55,28 +60,40 @@
             </div>
         </header>
 
-        <nav id="tab-navigation" class="bg-white shadow-sm sticky top-16 z-20">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex gap-8 -mb-px">
-                    <button data-tab="ghi-danh" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-indigo-600 text-indigo-600 active-tab">
+        <!-- Overlay -->
+        <div id="mobile-menu-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden sm:hidden transition-opacity"></div>
+
+        <nav id="tab-navigation" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform -translate-x-full transition-transform duration-300 sm:relative sm:translate-x-0 sm:w-auto sm:bg-transparent sm:shadow-sm sm:sticky sm:top-16 sm:z-20">
+            <!-- Đóng menu button on mobile -->
+            <div class="flex items-center justify-between p-4 sm:hidden border-b border-gray-200">
+                <span class="text-lg font-bold text-indigo-600">Menu</span>
+                <button id="close-menu-btn" class="p-2 text-gray-600 hover:text-red-500 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="h-full overflow-y-auto sm:overflow-visible">
+                <div class="flex flex-col sm:flex-row gap-1 sm:gap-8 p-4 sm:p-0 sm:-mb-px max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <button data-tab="ghi-danh" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-indigo-600 bg-indigo-50 sm:bg-transparent text-indigo-600 active-tab">
                         Ghi Danh
                     </button>
-                    <button data-tab="ql-hv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <button data-tab="ql-hv" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300">
                         Quản lý HV
                     </button>
-                    <button data-tab="ql-hlv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                    <button data-tab="ql-hlv" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Quản lý HLV
                     </button>
-                    <button data-tab="bao-cao" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                    <button data-tab="bao-cao" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Báo cáo
                     </button>
-                    <button data-tab="import" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                    <button data-tab="import" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Import
                     </button>
-                    <button data-tab="cai-dat" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                    <button data-tab="cai-dat" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Cài Đặt
                     </button>
-                    <button data-tab="goi-hoc" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
+                    <button data-tab="goi-hoc" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Quản lý Gói Học
                     </button>
                 </div>

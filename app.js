@@ -70,6 +70,29 @@ const tabNavigation = document.getElementById('tab-navigation');
 const tabButtons = document.querySelectorAll('.tab-button');
 const tabPanels = document.querySelectorAll('.tab-panel');
 
+// Elements cho Mobile Menu
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const closeMenuBtn = document.getElementById('close-menu-btn');
+const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+
+const toggleMobileMenu = (forceClose = false) => {
+    if (!mobileMenuBtn) return;
+    const isMenuOpen = !tabNavigation.classList.contains('-translate-x-full');
+    
+    if (isMenuOpen || forceClose) {
+        tabNavigation.classList.add('-translate-x-full');
+        mobileMenuOverlay.classList.add('hidden', 'opacity-0');
+    } else {
+        tabNavigation.classList.remove('-translate-x-full');
+        mobileMenuOverlay.classList.remove('hidden');
+        setTimeout(() => mobileMenuOverlay.classList.remove('opacity-0'), 10);
+    }
+};
+
+if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => toggleMobileMenu());
+if (closeMenuBtn) closeMenuBtn.addEventListener('click', () => toggleMobileMenu(true));
+if (mobileMenuOverlay) mobileMenuOverlay.addEventListener('click', () => toggleMobileMenu(true));
+
 // Elements cho Modal
 const customModal = document.getElementById('custom-modal');
 const modalTitle = document.getElementById('modal-title');
@@ -458,10 +481,17 @@ tabNavigation.addEventListener('click', (e) => {
     if (e.target.classList.contains('tab-button')) {
         const tabName = e.target.dataset.tab;
         
-        tabButtons.forEach(btn => btn.classList.remove('active-tab', 'border-indigo-600', 'text-indigo-600'));
+        tabButtons.forEach(btn => {
+            btn.classList.remove('active-tab', 'border-indigo-600', 'text-indigo-600', 'bg-indigo-50');
+            btn.classList.add('border-transparent', 'text-gray-500');
+        });
         tabPanels.forEach(panel => panel.classList.remove('active'));
 
-        e.target.classList.add('active-tab', 'border-indigo-600', 'text-indigo-600');
+        e.target.classList.add('active-tab', 'border-indigo-600', 'text-indigo-600', 'bg-indigo-50');
+        e.target.classList.remove('border-transparent', 'text-gray-500');
+        
+        // Auto close mobile menu when a tab is clicked
+        toggleMobileMenu(true);
         
         const panelToShow = document.getElementById(`content-${tabName}`);
         if (panelToShow) {
