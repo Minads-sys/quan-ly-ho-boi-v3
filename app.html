@@ -495,6 +495,16 @@
                             <span id="settings-spinner" class="loader-sm hidden"></span>
                             Lưu Cài Đặt
                         </button>
+                        
+                        <hr class="my-6 border-gray-200">
+                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg admin-only">
+                            <h3 class="text-red-800 font-bold mb-2">Phát Hành Bản Cập Nhật</h3>
+                            <p class="text-sm text-red-600 mb-4">Bấm nút này để ép toàn bộ ứng dụng trên các máy khác tự động tải lại trang và nhận code mới nhất.</p>
+                            <button id="release-update-button" class="w-full flex justify-center items-center gap-3 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+                                <span id="release-spinner" class="loader-sm hidden"></span>
+                                Phát Hành Ngay
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -716,6 +726,19 @@
     <div id="print-section" class="hidden">
         </div>
 
+
+    <div id="update-reload-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[200] hidden">
+        <div class="bg-white p-8 sm:p-10 rounded-xl shadow-lg w-full max-w-sm text-center">
+            <div class="text-indigo-600 mb-4">
+                <svg class="w-16 h-16 mx-auto animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Đang cập nhật phiên bản mới</h3>
+            <p class="text-sm text-gray-500">Hệ thống sẽ tự động tải lại trong giây lát...</p>
+        </div>
+    </div>
 
     <script type="module" src="app.js?v=20260421011040"></script>
     
