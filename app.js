@@ -41,6 +41,7 @@ const db = getFirestore(app);
 // --- BIẾN TOÀN CỤC ---
 let currentUser = null;
 let currentUserRole = null; // 'admin', 'letan', or null
+let initialAppVersion = null; // Dùng để track reload
 let globalRateHBA = 0;
 let globalRateTax = 0;
 let globalGoiHocList = [];
@@ -86,6 +87,9 @@ const rateHBAInput = document.getElementById('setting-rate-hba');
 const rateTaxInput = document.getElementById('setting-rate-tax');
 const saveSettingsButton = document.getElementById('save-settings-button');
 const settingsSpinner = document.getElementById('settings-spinner');
+const releaseUpdateButton = document.getElementById('release-update-button');
+const releaseSpinner = document.getElementById('release-spinner');
+const updateReloadModal = document.getElementById('update-reload-modal');
 
 // Elements cho Tab Gói Học (Step 2b)
 const goiHocTableBody = document.getElementById('goi-hoc-table-body');
@@ -131,7 +135,10 @@ const tenHVInput = document.getElementById('tenHV');
 const sdtHVInput = document.getElementById('sdtHV');
 const maTheInput = document.getElementById('maThe');
 const soPhieuThuInput = document.getElementById('soPhieuThu');
-const hinhThucThanhToanSelect = document.getElementById('hinhThucThanhToan');
+const ttTienMatInput = document.getElementById('ttTienMat');
+const ttChuyenKhoanInput = document.getElementById('ttChuyenKhoan');
+const ttQuetTheInput = document.getElementById('ttQuetThe');
+const ttStatusDiv = document.getElementById('ttStatus');
 
 // Elements cho Tab Quản lý HV
 const hocVienTableBody = document.getElementById('hocvien-table-body');
@@ -161,7 +168,11 @@ const hocVienEditMaTheInput = document.getElementById('hocvien-edit-mathe');
 const hocVienEditPhieuThuInput = document.getElementById('hocvien-edit-phieuthu');
 const hocVienEditGoiHocInput = document.getElementById('hocvien-edit-goihoc');
 const hocVienEditHLVInput = document.getElementById('hocvien-edit-hlv');
-const hocVienEditHTTTInput = document.getElementById('hocvien-edit-httt');
+const editTtTienMatInput = document.getElementById('edit-ttTienMat');
+const editTtChuyenKhoanInput = document.getElementById('edit-ttChuyenKhoan');
+const editTtQuetTheInput = document.getElementById('edit-ttQuetThe');
+const editTtStatusDiv = document.getElementById('editTtStatus');
+const editHocPhiValueInput = document.getElementById('hocvien-edit-hocphi-value');
 const hocVienEditNgayGhiInput = document.getElementById('hocvien-edit-ngayghi');
 const hocVienEditNgayHetInput = document.getElementById('hocvien-edit-ngayhet');
 const hocVienEditCancelButton = document.getElementById('hocvien-edit-cancel-button');
@@ -232,6 +243,67 @@ const formatDateTimeForDisplay = (date) => {
     const d = (date instanceof Date) ? date : date.toDate();
     const time = d.toLocaleTimeString('vi-VN');
     return `${formatDateForDisplay(d)} ${time}`;
+};
+
+// --- HÀM HỖ TRỢ THANH TOÁN KẾT HỢP ---
+
+// Tạo mảng thanhToanChiTiet từ 3 input
+const buildThanhToanChiTiet = (tienMat, chuyenKhoan, quetThe) => {
+    const result = [];
+    if (tienMat > 0) result.push({ hinhThuc: 'Tiền mặt', soTien: tienMat });
+    if (chuyenKhoan > 0) result.push({ hinhThuc: 'Chuyển khoản', soTien: chuyenKhoan });
+    if (quetThe > 0) result.push({ hinhThuc: 'Quẹt thẻ', soTien: quetThe });
+    return result;
+};
+
+// Tạo chuỗi hinhThucThanhToan tóm tắt (tương thích ngược)
+const buildHTTTSummary = (chiTiet) => {
+    if (!chiTiet || chiTiet.length === 0) return 'N/A';
+    return chiTiet.map(ct => ct.hinhThuc).join(' + ');
+};
+
+// Tạo chuỗi hiển thị chi tiết thanh toán
+const formatThanhToanDisplay = (hv) => {
+    if (hv.thanhToanChiTiet && hv.thanhToanChiTiet.length > 0) {
+        return hv.thanhToanChiTiet.map(ct => {
+            const shortName = ct.hinhThuc === 'Tiền mặt' ? 'TM' : ct.hinhThuc === 'Chuyển khoản' ? 'CK' : 'QT';
+            return `${shortName}: ${formatCurrency(ct.soTien)}`;
+        }).join(' + ');
+    }
+    return hv.hinhThucThanhToan || 'N/A';
+};
+
+// Tách tiền theo HTTT từ 1 học viên (tương thích dữ liệu cũ + mới)
+const getTienTheoHTTT = (hv) => {
+    let tienMat = 0, chuyenKhoan = 0, quetThe = 0;
+    if (hv.thanhToanChiTiet && hv.thanhToanChiTiet.length > 0) {
+        for (const ct of hv.thanhToanChiTiet) {
+            if (ct.hinhThuc === 'Tiền mặt') tienMat += ct.soTien;
+            else if (ct.hinhThuc === 'Chuyển khoản') chuyenKhoan += ct.soTien;
+            else if (ct.hinhThuc === 'Quẹt thẻ') quetThe += ct.soTien;
+        }
+    } else {
+        // Dữ liệu cũ: toàn bộ hocPhi thuộc hinhThucThanhToan
+        if (hv.hinhThucThanhToan === 'Tiền mặt') tienMat = hv.hocPhi;
+        else if (hv.hinhThucThanhToan === 'Chuyển khoản') chuyenKhoan = hv.hocPhi;
+        else if (hv.hinhThucThanhToan === 'Quẹt thẻ') quetThe = hv.hocPhi;
+    }
+    return { tienMat, chuyenKhoan, quetThe };
+};
+
+// Cập nhật trạng thái khớp/chưa khớp thanh toán
+const updateTTStatus = (statusDiv, tienMat, chuyenKhoan, quetThe, hocPhi) => {
+    const tongNhap = tienMat + chuyenKhoan + quetThe;
+    if (hocPhi <= 0) {
+        statusDiv.textContent = `Tổng: ${formatCurrency(tongNhap)} / Học phí: 0 VNĐ`;
+        statusDiv.className = 'text-sm font-semibold text-gray-500 text-right';
+    } else if (tongNhap === hocPhi) {
+        statusDiv.innerHTML = `✅ Khớp: <strong>${formatCurrency(tongNhap)}</strong> / ${formatCurrency(hocPhi)} VNĐ`;
+        statusDiv.className = 'text-sm font-semibold text-green-600 text-right';
+    } else {
+        statusDiv.innerHTML = `❌ Chưa khớp: <strong>${formatCurrency(tongNhap)}</strong> / ${formatCurrency(hocPhi)} VNĐ (Thiếu ${formatCurrency(hocPhi - tongNhap)})`;
+        statusDiv.className = 'text-sm font-semibold text-red-600 text-right';
+    }
 };
 
 const showModal = (message, title = "Thông báo") => {
@@ -443,19 +515,41 @@ tabNavigation.addEventListener('click', (e) => {
 
 // --- NGHIỆP VỤ BƯỚC 2a: CÀI ĐẶT ---
 
-const loadSettings = async () => {
-    try {
-        const docSnap = await getDoc(doc(db, "app_config", "main_config"));
-        if (docSnap.exists()) {
-            const config = docSnap.data();
-            globalRateHBA = config.rateHBA || 0;
-            globalRateTax = config.rateTax || 0;
-        }
-        rateHBAInput.value = globalRateHBA;
-        rateTaxInput.value = globalRateTax;
-    } catch (error) {
-        console.error("Lỗi load settings:", error);
-    }
+let unsubSettings = null;
+
+const loadSettings = () => {
+    return new Promise((resolve) => {
+        if (unsubSettings) unsubSettings();
+        
+        unsubSettings = onSnapshot(doc(db, "app_config", "main_config"), (docSnap) => {
+            if (docSnap.exists()) {
+                const config = docSnap.data();
+                globalRateHBA = config.rateHBA || 0;
+                globalRateTax = config.rateTax || 0;
+                
+                rateHBAInput.value = globalRateHBA;
+                rateTaxInput.value = globalRateTax;
+                
+                // Logic ép tải lại khi có phiên bản mới
+                if (config.appVersion) {
+                    if (initialAppVersion === null) {
+                        // Lần đầu tải trang, lưu lại version hiện tại
+                        initialAppVersion = config.appVersion;
+                    } else if (config.appVersion > initialAppVersion) {
+                        // Nếu version trên db lớn hơn version lúc mới tải, ép tải lại trang
+                        updateReloadModal.classList.remove('hidden');
+                        setTimeout(() => {
+                            window.location.href = window.location.pathname + '?v=' + config.appVersion;
+                        }, 2000); // Đợi 2s cho user đọc thông báo rồi reload
+                    }
+                }
+            }
+            resolve();
+        }, (error) => {
+            console.error("Lỗi load settings realtime:", error);
+            resolve(); // Vẫn resolve để không chặn app
+        });
+    });
 };
 
 saveSettingsButton.addEventListener('click', async () => {
@@ -466,15 +560,33 @@ saveSettingsButton.addEventListener('click', async () => {
     settingsSpinner.classList.remove('hidden');
 
     try {
-        await setDoc(doc(db, "app_config", "main_config"), { rateHBA, rateTax });
-        globalRateHBA = rateHBA;
-        globalRateTax = rateTax;
+        await updateDoc(doc(db, "app_config", "main_config"), { rateHBA, rateTax });
         showModal("Đã lưu cài đặt thành công!", "Thành công");
     } catch (error) {
         showModal(`Lỗi lưu cài đặt: ${error.message}`, "Lỗi");
     } finally {
         saveSettingsButton.disabled = false;
         settingsSpinner.classList.add('hidden');
+    }
+});
+
+releaseUpdateButton.addEventListener('click', async () => {
+    // Chỉ admin mới có nút này nhờ class admin-only
+    const confirmRelease = confirm("Bạn có chắc chắn muốn phát hành bản cập nhật mới? Hành động này sẽ ép TẤT CẢ trình duyệt của nhân viên tải lại trang ngay lập tức.");
+    if (!confirmRelease) return;
+
+    releaseUpdateButton.disabled = true;
+    releaseSpinner.classList.remove('hidden');
+
+    const newVersion = Date.now();
+
+    try {
+        await updateDoc(doc(db, "app_config", "main_config"), { appVersion: newVersion });
+        // Không cần hiện thông báo ở đây vì onSnapshot sẽ catch được appVersion mới và reload luôn trang này.
+    } catch (error) {
+        showModal(`Lỗi phát hành cập nhật: ${error.message}`, "Lỗi");
+        releaseUpdateButton.disabled = false;
+        releaseSpinner.classList.add('hidden');
     }
 });
 
@@ -768,11 +880,33 @@ goiHocSelect.addEventListener('change', () => {
     const goi = globalGoiHocList.find(g => g.id === goiId);
     if (goi) {
         displayHocPhi.textContent = `${formatCurrency(goi.hocPhi)} VNĐ`;
+        // Auto-fill toàn bộ học phí vào ô Tiền mặt mặc định
+        ttTienMatInput.value = goi.hocPhi;
+        ttChuyenKhoanInput.value = 0;
+        ttQuetTheInput.value = 0;
     } else {
         displayHocPhi.textContent = `0 VNĐ`;
+        ttTienMatInput.value = 0;
+        ttChuyenKhoanInput.value = 0;
+        ttQuetTheInput.value = 0;
     }
+    updateGhiDanhTTStatus();
     autoSelectHLV();
 });
+
+// Lắng nghe sự kiện nhập tiền trên 3 ô thanh toán (Form Ghi Danh)
+const updateGhiDanhTTStatus = () => {
+    const goiId = goiHocSelect.value;
+    const goi = globalGoiHocList.find(g => g.id === goiId);
+    const hocPhi = goi ? goi.hocPhi : 0;
+    const tm = parseInt(ttTienMatInput.value) || 0;
+    const ck = parseInt(ttChuyenKhoanInput.value) || 0;
+    const qt = parseInt(ttQuetTheInput.value) || 0;
+    updateTTStatus(ttStatusDiv, tm, ck, qt, hocPhi);
+};
+ttTienMatInput.addEventListener('input', updateGhiDanhTTStatus);
+ttChuyenKhoanInput.addEventListener('input', updateGhiDanhTTStatus);
+ttQuetTheInput.addEventListener('input', updateGhiDanhTTStatus);
 
 chkChiDinh.addEventListener('change', () => {
     if (chkChiDinh.checked) {
@@ -834,18 +968,32 @@ ghiDanhForm.addEventListener('submit', async (e) => {
     const goiHocId = goiHocSelect.value;
     const caHoc = caHocSelect.value;
     const nhomTuoi = nhomTuoiSelect.value;
-    const hinhThucThanhToan = hinhThucThanhToanSelect.value;
 
     if (!tenHV || !sdtHV || !goiHocId) {
         showModal("Vui lòng điền đầy đủ thông tin bắt buộc.", "Thiếu thông tin");
         return;
     }
+
+    // Thu thập và validate thanh toán kết hợp
+    const tienMat = parseInt(ttTienMatInput.value) || 0;
+    const chuyenKhoan = parseInt(ttChuyenKhoanInput.value) || 0;
+    const quetThe = parseInt(ttQuetTheInput.value) || 0;
+    const goiHocCheck = globalGoiHocList.find(g => g.id === goiHocId);
+    const tongNhap = tienMat + chuyenKhoan + quetThe;
+
+    if (!goiHocCheck || tongNhap !== goiHocCheck.hocPhi) {
+        showModal(`Tổng thanh toán (${formatCurrency(tongNhap)} VNĐ) chưa khớp với Học phí (${formatCurrency(goiHocCheck ? goiHocCheck.hocPhi : 0)} VNĐ). Vui lòng kiểm tra lại.\nKhông cho phép công nợ.`, "Lỗi thanh toán");
+        return;
+    }
+
+    const thanhToanChiTiet = buildThanhToanChiTiet(tienMat, chuyenKhoan, quetThe);
+    const hinhThucThanhToan = buildHTTTSummary(thanhToanChiTiet);
     
     ghiDanhSubmitButton.disabled = true;
     ghiDanhSpinner.classList.remove('hidden');
 
     try {
-        const goiHoc = globalGoiHocList.find(g => g.id === goiHocId);
+        const goiHoc = goiHocCheck;
         if (!goiHoc) throw new Error("Gói học không hợp lệ.");
 
         let hlvDuocChon = null;
@@ -873,6 +1021,7 @@ ghiDanhForm.addEventListener('submit', async (e) => {
         const hocVienData = {
             tenHV, sdtHV, nhomTuoi, caHoc,
             hinhThucThanhToan,
+            thanhToanChiTiet,
             maThe: maTheInput.value.trim(),
             soPhieuThu: soPhieuThuInput.value.trim(),
             goiHocId: goiHocId,
@@ -910,6 +1059,11 @@ const resetGhiDanhForm = () => {
     ghiDanhPrintButton.disabled = true;
     lastRegisteredHocVien = null;
     chiDinhDropdownContainer.classList.add('hidden');
+    ttTienMatInput.value = 0;
+    ttChuyenKhoanInput.value = 0;
+    ttQuetTheInput.value = 0;
+    ttStatusDiv.textContent = 'Tổng: 0 / Học phí: 0 VNĐ';
+    ttStatusDiv.className = 'text-sm font-semibold text-gray-500 text-right';
     autoSelectHLV();
 };
 ghiDanhResetButton.addEventListener('click', resetGhiDanhForm);
@@ -936,7 +1090,7 @@ const printReceipt = (hv) => {
             <p><strong>Ngày giờ ghi danh:</strong> ${formatDateTimeForDisplay(ngayGhiDanh)}</p>
             <p><strong>Mã HV:</strong> ${hv.maThe || hv.id.substring(0, 10).toUpperCase()}</p>
             <p><strong>Số phiếu thu:</strong> ${hv.soPhieuThu || 'N/A'}</p>
-            <p><strong>Hình thức TT:</strong> ${hv.hinhThucThanhToan || 'N/A'}</p>
+            <p><strong>Hình thức TT:</strong> ${formatThanhToanDisplay(hv)}</p>
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
             <p><strong>Họ tên học viên:</strong> ${hv.tenHV}</p>
             <p><strong>Số điện thoại:</strong> ${hv.sdtHV}</p>
@@ -1032,7 +1186,7 @@ const updateQuickReport = (startDate = null, endDate = null) => {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(hv.hocPhi)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.hinhThucThanhToan || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatThanhToanDisplay(hv)}</td>
                 </tr>
             `;
         }
@@ -1099,10 +1253,10 @@ const handlePrintQuickReport = () => {
             </thead>
             <tbody>
                 ${quickReportData.map((hv, index) => {
-                    if (hv.hinhThucThanhToan === 'Tiền mặt') totalTienMat += hv.hocPhi;
-                    else if (hv.hinhThucThanhToan === 'Chuyển khoản') totalChuyenKhoan += hv.hocPhi;
-                    else if (hv.hinhThucThanhToan === 'Quẹt thẻ') totalQuetThe += hv.hocPhi; // MỚI
-                    
+                    const tien = getTienTheoHTTT(hv);
+                    totalTienMat += tien.tienMat;
+                    totalChuyenKhoan += tien.chuyenKhoan;
+                    totalQuetThe += tien.quetThe;
                     totalDoanhThu += hv.hocPhi;
                     
                     return `
@@ -1115,7 +1269,7 @@ const handlePrintQuickReport = () => {
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hocPhi)}</td>
-                        <td style="border: 1px solid #ddd; padding: 6px;">${hv.hinhThucThanhToan || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatThanhToanDisplay(hv)}</td>
                     </tr>
                 `}).join('')}
             </tbody>
@@ -1173,14 +1327,14 @@ const handleExportQuickReport = () => {
         ];
 
         quickReportData.forEach((hv, index) => {
-            if (hv.hinhThucThanhToan === 'Tiền mặt') totalTienMat += hv.hocPhi;
-            else if (hv.hinhThucThanhToan === 'Chuyển khoản') totalChuyenKhoan += hv.hocPhi;
-            else if (hv.hinhThucThanhToan === 'Quẹt thẻ') totalQuetThe += hv.hocPhi; // MỚI
-            
+            const tien = getTienTheoHTTT(hv);
+            totalTienMat += tien.tienMat;
+            totalChuyenKhoan += tien.chuyenKhoan;
+            totalQuetThe += tien.quetThe;
             totalDoanhThu += hv.hocPhi;
 
             dataForSheet.push([
-                index + 1, hv.soPhieuThu, hv.maThe, hv.tenHV, hv.sdtHV, hv.tenHLV, hv.tenGoiHoc, hv.hocPhi, hv.hinhThucThanhToan
+                index + 1, hv.soPhieuThu, hv.maThe, hv.tenHV, hv.sdtHV, hv.tenHLV, hv.tenGoiHoc, hv.hocPhi, formatThanhToanDisplay(hv)
             ]);
         });
         
@@ -1371,7 +1525,14 @@ const openHocVienEditModal = (hocvien) => {
     hocVienEditMaTheInput.value = hocvien.maThe || '';
     hocVienEditPhieuThuInput.value = hocvien.soPhieuThu || '';
     hocVienEditGoiHocInput.value = hocvien.tenGoiHoc;
-    hocVienEditHTTTInput.value = hocvien.hinhThucThanhToan || 'Tiền mặt'; 
+    editHocPhiValueInput.value = hocvien.hocPhi || 0;
+
+    // Load thanh toán chi tiết vào 3 ô input
+    const tien = getTienTheoHTTT(hocvien);
+    editTtTienMatInput.value = tien.tienMat;
+    editTtChuyenKhoanInput.value = tien.chuyenKhoan;
+    editTtQuetTheInput.value = tien.quetThe;
+    updateEditTTStatus();
     
     hocVienEditHLVInput.innerHTML = ''; 
     globalHLVList.forEach(hlv => {
@@ -1391,6 +1552,18 @@ const openHocVienEditModal = (hocvien) => {
     hocVienEditModal.classList.remove('hidden');
     setTimeout(() => hocVienEditModal.classList.add('flex'), 10);
 };
+
+// Lắng nghe sự kiện nhập tiền trên 3 ô thanh toán (Modal Sửa HV)
+const updateEditTTStatus = () => {
+    const hocPhi = parseInt(editHocPhiValueInput.value) || 0;
+    const tm = parseInt(editTtTienMatInput.value) || 0;
+    const ck = parseInt(editTtChuyenKhoanInput.value) || 0;
+    const qt = parseInt(editTtQuetTheInput.value) || 0;
+    updateTTStatus(editTtStatusDiv, tm, ck, qt, hocPhi);
+};
+editTtTienMatInput.addEventListener('input', updateEditTTStatus);
+editTtChuyenKhoanInput.addEventListener('input', updateEditTTStatus);
+editTtQuetTheInput.addEventListener('input', updateEditTTStatus);
 
 const closeHocVienEditModal = () => {
     hocVienEditModal.classList.remove('flex');
@@ -1418,6 +1591,21 @@ hocVienEditForm.addEventListener('submit', async (e) => {
     const id = hocVienEditIdInput.value;
     if (!id) return;
 
+    // Validate thanh toán kết hợp
+    const hocPhi = parseInt(editHocPhiValueInput.value) || 0;
+    const tienMat = parseInt(editTtTienMatInput.value) || 0;
+    const chuyenKhoan = parseInt(editTtChuyenKhoanInput.value) || 0;
+    const quetThe = parseInt(editTtQuetTheInput.value) || 0;
+    const tongNhap = tienMat + chuyenKhoan + quetThe;
+
+    if (hocPhi > 0 && tongNhap !== hocPhi) {
+        showModal(`Tổng thanh toán (${formatCurrency(tongNhap)} VNĐ) chưa khớp với Học phí (${formatCurrency(hocPhi)} VNĐ). Vui lòng kiểm tra lại.`, "Lỗi thanh toán");
+        return;
+    }
+
+    const thanhToanChiTiet = buildThanhToanChiTiet(tienMat, chuyenKhoan, quetThe);
+    const hinhThucThanhToan = buildHTTTSummary(thanhToanChiTiet);
+
     try {
         const ngayGhiDanhMoi = new Date(hocVienEditNgayGhiInput.value);
         const ngayHetHanMoi = new Date(hocVienEditNgayHetInput.value);
@@ -1432,7 +1620,8 @@ hocVienEditForm.addEventListener('submit', async (e) => {
             sdtHV: hocVienEditSdtInput.value.trim(),
             maThe: hocVienEditMaTheInput.value.trim(),
             soPhieuThu: hocVienEditPhieuThuInput.value.trim(),
-            hinhThucThanhToan: hocVienEditHTTTInput.value, 
+            hinhThucThanhToan,
+            thanhToanChiTiet,
             ngayGhiDanh: Timestamp.fromDate(ngayGhiDanhMoi),
             ngayHetHan: Timestamp.fromDate(ngayHetHanMoi),
             hlvId: newHlvId,   
@@ -1700,7 +1889,7 @@ const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${formatCurrency(hv.hocPhi)} VNĐ</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.hinhThucThanhToan || 'N/A'}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatThanhToanDisplay(hv)}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.hbaNhan)}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.tongHoaHong)}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hv.thue)}</td>
@@ -1815,7 +2004,7 @@ const generateDoanhThuChiTietPrintHTML = (data) => {
                         <td style="border: 1px solid #ddd; padding: 4px;">${hv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 4px;">${hv.tenGoiHoc}</td>
                         <td style="border: 1px solid #ddd; padding: 4px;">${formatCurrency(hv.hocPhi)}</td>
-                        <td style="border: 1px solid #ddd; padding: 4px;">${hv.hinhThucThanhToan || ''}</td>
+                        <td style="border: 1px solid #ddd; padding: 4px;">${formatThanhToanDisplay(hv)}</td>
                         <td style="border: 1px solid #ddd; padding: 4px;">${formatCurrency(hv.hbaNhan)}</td>
                         <td style="border: 1px solid #ddd; padding: 4px;">${formatCurrency(hv.tongHoaHong)}</td>
                         <td style="border: 1px solid #ddd; padding: 4px;">${formatCurrency(hv.thue)}</td>
@@ -1952,7 +2141,7 @@ const handleExportExcel = () => {
             currentReportData.sort((a, b) => a.ngayGhiDanh.toDate() - b.ngayGhiDanh.toDate()).forEach((hv, index) => {
                 dataForSheet.push([
                     index + 1, hv.tenHV, hv.sdtHV, hv.tenHLV, hv.tenGoiHoc, hv.hocPhi,
-                    hv.hinhThucThanhToan || 'N/A', hv.hbaNhan, hv.tongHoaHong, hv.thue, hv.hlvThucNhan
+                    formatThanhToanDisplay(hv), hv.hbaNhan, hv.tongHoaHong, hv.thue, hv.hlvThucNhan
                 ]);
             });
             // Cấu hình độ rộng cột cho Chi tiết
