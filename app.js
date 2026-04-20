@@ -1250,9 +1250,9 @@ const handlePrintQuickReport = () => {
             <p>Tổng Quẹt thẻ: <strong>${formatCurrency(totalQuetThe)} VNĐ</strong></p> <p style="font-size: 14pt;">TỔNG CỘNG: <strong>${formatCurrency(totalDoanhThu)} VNĐ</strong></p>
         </div>
         <div id="print-qr-signatures" style="display: flex; justify-content: space-around; margin-top: 50px;">
-            <div style="text-align: center;"><p><strong>Người lập phiếu</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
-            <div style="text-align: center;"><p><strong>Kế toán</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
-            <div style="text-align: center;"><p><strong>Giám đốc</strong></p><p style="margin-top: 60px;">(Ký, họ tên)</p></div>
+            <div style="text-align: center;"><p><strong>Người lập phiếu</strong></p><p style="margin-top: 5px;">(Ký, họ tên)</p><div style="height: 60px;"></div></div>
+            <div style="text-align: center;"><p><strong>Kế toán</strong></p><p style="margin-top: 5px;">(Ký, họ tên)</p><div style="height: 60px;"></div></div>
+            <div style="text-align: center;"><p><strong>Giám đốc</strong></p><p style="margin-top: 5px;">(Ký, họ tên)</p><div style="height: 60px;"></div></div>
         </div>
     `;
     
