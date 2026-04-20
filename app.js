@@ -397,49 +397,7 @@ const detachAllListeners = () => {
 };
 
 
-// --- NGHIỆP VỤ BƯỚC 1: XÁC THỰC & PHÂN QUYỀN ---
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        userEmailElement.textContent = user.email;
-
-        try {
-            const roleDoc = await getDoc(doc(db, "user_roles", user.uid));
-            if (roleDoc.exists()) {
-                currentUserRole = roleDoc.data().role;
-            } else {
-                currentUserRole = 'letan'; 
-                console.warn("Không tìm thấy vai trò, gán letan.");
-            }
-            
-            setupUIForRole(currentUserRole);
-            await loadAllInitialData();
-
-        } catch (error) {
-            console.error("Lỗi role:", error);
-            showModal(`Lỗi phân quyền: ${error.message}`, "Lỗi");
-            currentUserRole = null;
-            setupUIForRole(null); 
-        }
-        
-        mainApp.classList.remove('hidden');
-        loginScreen.classList.add('hidden');
-    } else {
-        currentUser = null;
-        currentUserRole = null;
-        mainApp.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        setupUIForRole(null); 
-        detachAllListeners();
-        globalGoiHocList = [];
-        globalHLVList = [];
-        globalHocVienList = [];
-        globalRateHBA = 0;
-        globalRateTax = 0;
-    }
-    globalLoader.classList.add('hidden');
-});
 
 const setupUIForRole = (role) => {
     if (role === 'admin') {
@@ -2431,7 +2389,47 @@ importStartBtn.addEventListener('click', handleImportStart);
 if (hvListPrintBtn) hvListPrintBtn.addEventListener('click', handlePrintStudentList);
 if (hvListExcelBtn) hvListExcelBtn.addEventListener('click', handleExportStudentList);
 
+// --- NGHIỆP VỤ BƯỚC 1: XÁC THỰC & PHÂN QUYỀN ---
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        currentUser = user;
+        userEmailElement.textContent = user.email;
 
+        try {
+            const roleDoc = await getDoc(doc(db, "user_roles", user.uid));
+            if (roleDoc.exists()) {
+                currentUserRole = roleDoc.data().role;
+            } else {
+                currentUserRole = 'letan'; 
+                console.warn("Không tìm thấy vai trò, gán letan.");
+            }
+            
+            setupUIForRole(currentUserRole);
+            await loadAllInitialData();
 
+        } catch (error) {
+            console.error("Lỗi role:", error);
+            showModal(`Lỗi phân quyền: ${error.message}`, "Lỗi");
+            currentUserRole = null;
+            setupUIForRole(null); 
+        }
+        
+        mainApp.classList.remove('hidden');
+        loginScreen.classList.add('hidden');
+    } else {
+        currentUser = null;
+        currentUserRole = null;
+        mainApp.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+        setupUIForRole(null); 
+        detachAllListeners();
+        globalGoiHocList = [];
+        globalHLVList = [];
+        globalHocVienList = [];
+        globalRateHBA = 0;
+        globalRateTax = 0;
+    }
+    globalLoader.classList.add('hidden');
+});
 
 
