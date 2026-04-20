@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quáº£n lÃ½ Há»“ bÆ¡i HBA V3</title>
+    <title>Quản lý Hồ bơi HBA V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="app.css?v=20260421011040">
@@ -16,7 +16,7 @@
 
     <div id="login-screen" class="min-h-screen flex items-center justify-center hidden">
         <div class="bg-white p-8 sm:p-10 rounded-xl shadow-lg w-full max-w-md">
-            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">ÄÄƒng nháº­p HBA V3</h2>
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Đăng nhập HBA V3</h2>
             <form id="login-form" class="space-y-6">
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -24,14 +24,14 @@
                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Máº­t kháº©u</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
                     <input type="password" id="password" required
                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <button type="submit" id="login-button"
                         class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                     <span id="login-spinner" class="loader-sm hidden"></span>
-                    ÄÄƒng nháº­p
+                    Đăng nhập
                 </button>
             </form>
         </div>
@@ -48,7 +48,7 @@
                     <div class="flex items-center gap-4">
                         <span id="user-email" class="text-sm text-gray-600 hidden sm:block">...</span>
                         <button id="logout-button" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
-                            ÄÄƒng Xuáº¥t
+                            Đăng Xuất
                         </button>
                     </div>
                 </div>
@@ -62,22 +62,22 @@
                         Ghi Danh
                     </button>
                     <button data-tab="ql-hv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        Quáº£n lÃ½ HV
+                        Quản lý HV
                     </button>
                     <button data-tab="ql-hlv" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
-                        Quáº£n lÃ½ HLV
+                        Quản lý HLV
                     </button>
                     <button data-tab="bao-cao" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
-                        BÃ¡o cÃ¡o
+                        Báo cáo
                     </button>
                     <button data-tab="import" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
                         Import
                     </button>
                     <button data-tab="cai-dat" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
-                        CÃ i Äáº·t
+                        Cài Đặt
                     </button>
                     <button data-tab="goi-hoc" class="tab-button py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 admin-only">
-                        Quáº£n lÃ½ GÃ³i Há»c
+                        Quản lý Gói Học
                     </button>
                 </div>
             </div>
@@ -87,86 +87,86 @@
             <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                 
                 <div id="content-ghi-danh" class="tab-panel active">
-                    <h2 class="text-2xl font-semibold mb-6">Ghi Danh Há»c ViÃªn Má»›i</h2>
+                    <h2 class="text-2xl font-semibold mb-6">Ghi Danh Học Viên Mới</h2>
                     
                     <form id="ghi-danh-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="md:col-span-2 space-y-5">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label for="tenHV" class="block text-sm font-medium text-gray-700">TÃªn Há»c ViÃªn <span class="text-red-500">*</span></label>
+                                    <label for="tenHV" class="block text-sm font-medium text-gray-700">Tên Học Viên <span class="text-red-500">*</span></label>
                                     <input type="text" id="tenHV" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                                 <div>
-                                    <label for="sdtHV" class="block text-sm font-medium text-gray-700">Sá»‘ Äiá»‡n Thoáº¡i <span class="text-red-500">*</span></label>
+                                    <label for="sdtHV" class="block text-sm font-medium text-gray-700">Số Điện Thoại <span class="text-red-500">*</span></label>
                                     <input type="tel" id="sdtHV" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label for="maThe" class="block text-sm font-medium text-gray-700">MÃ£ Tháº» <span class="text-red-500">*</span></label>
+                                    <label for="maThe" class="block text-sm font-medium text-gray-700">Mã Thẻ <span class="text-red-500">*</span></label>
                                     <input type="text" id="maThe" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                                 <div>
-                                    <label for="soPhieuThu" class="block text-sm font-medium text-gray-700">Sá»‘ Phiáº¿u Thu <span class="text-red-500">*</span></label>
+                                    <label for="soPhieuThu" class="block text-sm font-medium text-gray-700">Số Phiếu Thu <span class="text-red-500">*</span></label>
                                     <input type="text" id="soPhieuThu" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                             </div>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label for="nhomTuoi" class="block text-sm font-medium text-gray-700">NhÃ³m Tuá»•i <span class="text-red-500">*</span></label>
+                                    <label for="nhomTuoi" class="block text-sm font-medium text-gray-700">Nhóm Tuổi <span class="text-red-500">*</span></label>
                                     <select id="nhomTuoi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                        <option value="6-8">6-8 tuá»•i</option>
-                                        <option value=">8">&gt; 8 tuá»•i</option>
+                                        <option value="6-8">6-8 tuổi</option>
+                                        <option value=">8">&gt; 8 tuổi</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="caHoc" class="block text-sm font-medium text-gray-700">Ca Há»c <span class="text-red-500">*</span></label>
+                                    <label for="caHoc" class="block text-sm font-medium text-gray-700">Ca Học <span class="text-red-500">*</span></label>
                                     <select id="caHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                        <option value="SÃ¡ng">SÃ¡ng</option>
-                                        <option value="Chiá»u">Chiá»u</option>
+                                        <option value="Sáng">Sáng</option>
+                                        <option value="Chiều">Chiều</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
-                                <label for="goiHoc" class="block text-sm font-medium text-gray-700">GÃ³i Há»c <span class="text-red-500">*</span></label>
+                                <label for="goiHoc" class="block text-sm font-medium text-gray-700">Gói Học <span class="text-red-500">*</span></label>
                                 <select id="goiHoc" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                    <option value="">-- Chá»n gÃ³i há»c --</option>
-                                </select>
+                                    <option value="">-- Chọn gói học --</option>
+                                    </select>
                             </div>
-
+                            
                             <div class="p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-3">
-                                <label class="block text-sm font-bold text-gray-700">HÃ¬nh thá»©c thanh toÃ¡n <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-bold text-gray-700">Hình thức thanh toán <span class="text-red-500">*</span></label>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
-                                        <label for="ttTienMat" class="block text-xs font-medium text-gray-600">ðŸ’µ Tiá»n máº·t</label>
+                                        <label for="ttTienMat" class="block text-xs font-medium text-gray-600">💵 Tiền mặt</label>
                                         <input type="number" id="ttTienMat" min="0" value="0" class="tt-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                                     </div>
                                     <div>
-                                        <label for="ttChuyenKhoan" class="block text-xs font-medium text-gray-600">ðŸ¦ Chuyá»ƒn khoáº£n</label>
+                                        <label for="ttChuyenKhoan" class="block text-xs font-medium text-gray-600">🏦 Chuyển khoản</label>
                                         <input type="number" id="ttChuyenKhoan" min="0" value="0" class="tt-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                                     </div>
                                     <div>
-                                        <label for="ttQuetThe" class="block text-xs font-medium text-gray-600">ðŸ’³ Quáº¹t tháº»</label>
+                                        <label for="ttQuetThe" class="block text-xs font-medium text-gray-600">💳 Quẹt thẻ</label>
                                         <input type="number" id="ttQuetThe" min="0" value="0" class="tt-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                                     </div>
                                 </div>
                                 <div id="ttStatus" class="text-sm font-semibold text-gray-500 text-right">
-                                    Tá»•ng: 0 / Há»c phÃ­: 0 VNÄ
+                                    Tổng: 0 / Học phí: 0 VNĐ
                                 </div>
                             </div>
                             
                             <div id="admin-chi-dinh-hlv" class="space-y-3 p-4 border border-indigo-200 rounded-lg bg-indigo-50 admin-only">
                                 <div class="flex items-center">
                                     <input id="chkChiDinh" type="checkbox" class="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500">
-                                    <label for="chkChiDinh" class="ml-3 block text-sm font-bold text-indigo-800">Chá»‰ Ä‘á»‹nh HLV thá»§ cÃ´ng (Admin)</label>
+                                    <label for="chkChiDinh" class="ml-3 block text-sm font-bold text-indigo-800">Chỉ định HLV thủ công (Admin)</label>
                                 </div>
                                 <div id="chi-dinh-dropdown-container" class="hidden">
-                                    <label for="hlvChiDinh" class="block text-sm font-medium text-gray-700">Chá»n HLV Chá»‰ Äá»‹nh</label>
+                                    <label for="hlvChiDinh" class="block text-sm font-medium text-gray-700">Chọn HLV Chỉ Định</label>
                                     <select id="hlvChiDinh" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                        <option value="">-- Chá»n HLV --</option>
+                                        <option value="">-- Chọn HLV --</option>
                                         </select>
                                 </div>
                             </div>
@@ -175,12 +175,12 @@
                         <div class="md:col-span-1 space-y-6">
                             <div class="space-y-4 p-5 rounded-lg bg-gray-50 border border-gray-200">
                                 <div>
-                                    <span class="block text-sm font-medium text-gray-500">Há»c PhÃ­</span>
-                                    <span id="displayHocPhi" class="text-2xl font-bold text-indigo-600">0 VNÄ</span>
+                                    <span class="block text-sm font-medium text-gray-500">Học Phí</span>
+                                    <span id="displayHocPhi" class="text-2xl font-bold text-indigo-600">0 VNĐ</span>
                                 </div>
                                 <div>
-                                    <span class="block text-sm font-medium text-gray-500">HLV ÄÆ°á»£c Chia Tá»± Äá»™ng</span>
-                                    <span id="displayHLV" class="text-lg font-semibold text-gray-800">-- Chá» --</span>
+                                    <span class="block text-sm font-medium text-gray-500">HLV Được Chia Tự Động</span>
+                                    <span id="displayHLV" class="text-lg font-semibold text-gray-800">-- Chờ --</span>
                                 </div>
                             </div>
 
@@ -190,10 +190,10 @@
                                     Ghi Danh
                                 </button>
                                 <button type="button" id="ghi-danh-reset-button" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
-                                    LÃ m Má»›i Form
+                                    Làm Mới Form
                                 </button>
                                 <button type="button" id="ghi-danh-print-button" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
-                                    In Phiáº¿u
+                                    In Phiếu
                                 </button>
                             </div>
                         </div>
@@ -201,14 +201,14 @@
 
                     <div id="quick-report-section" class="mt-12 border-t pt-8">
                         <div class="flex flex-col sm:flex-row justify-between items-end mb-4 gap-4">
-                            <h3 class="text-xl font-semibold text-gray-800">BÃ¡o cÃ¡o nhanh (Real-time)</h3>
+                            <h3 class="text-xl font-semibold text-gray-800">Báo cáo nhanh (Real-time)</h3>
                             <div class="flex gap-2 items-end">
                                 <div>
-                                    <label for="qr-date-from" class="block text-xs font-medium text-gray-700">Tá»« ngÃ y</label>
+                                    <label for="qr-date-from" class="block text-xs font-medium text-gray-700">Từ ngày</label>
                                     <input type="date" id="qr-date-from" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                                 <div>
-                                    <label for="qr-date-to" class="block text-xs font-medium text-gray-700">Äáº¿n ngÃ y</label>
+                                    <label for="qr-date-to" class="block text-xs font-medium text-gray-700">Đến ngày</label>
                                     <input type="date" id="qr-date-to" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                                 <button id="qr-view-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors text-sm shadow-sm">
@@ -219,32 +219,32 @@
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                                <span class="block text-sm font-medium text-blue-700">Doanh thu (Lá»c)</span>
-                                <span id="qr-dt-ngay" class="text-2xl font-bold text-blue-900">0 VNÄ</span>
+                                <span class="block text-sm font-medium text-blue-700">Doanh thu (Lọc)</span>
+                                <span id="qr-dt-ngay" class="text-2xl font-bold text-blue-900">0 VNĐ</span>
                             </div>
                             <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
-                                <span class="block text-sm font-medium text-green-700">Doanh thu thÃ¡ng nÃ y</span>
-                                <span id="qr-dt-thang" class="text-2xl font-bold text-green-900">0 VNÄ</span>
+                                <span class="block text-sm font-medium text-green-700">Doanh thu tháng này</span>
+                                <span id="qr-dt-thang" class="text-2xl font-bold text-green-900">0 VNĐ</span>
                             </div>
                             <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                                <span class="block text-sm font-medium text-yellow-700">HV má»›i (Lá»c)</span>
+                                <span class="block text-sm font-medium text-yellow-700">HV mới (Lọc)</span>
                                 <span id="qr-hv-ngay" class="text-2xl font-bold text-yellow-900">0</span>
                             </div>
                             <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-lg">
-                                <span class="block text-sm font-medium text-indigo-700">HV má»›i thÃ¡ng nÃ y</span>
+                                <span class="block text-sm font-medium text-indigo-700">HV mới tháng này</span>
                                 <span id="qr-hv-thang" class="text-2xl font-bold text-indigo-900">0</span>
                             </div>
                         </div>
                         
                         <div class="mt-6">
                             <div class="flex justify-between items-center mb-3">
-                                <h4 class="text-lg font-semibold text-gray-700">Danh sÃ¡ch há»c viÃªn (Theo bá»™ lá»c)</h4>
+                                <h4 class="text-lg font-semibold text-gray-700">Danh sách học viên (Theo bộ lọc)</h4>
                                 <div class="flex gap-2">
                                     <button id="qr-print-btn" class="bg-blue-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                                        In BÃ¡o cÃ¡o
+                                        In Báo cáo
                                     </button>
                                     <button id="qr-excel-btn" class="bg-green-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-green-700 transition-colors text-sm">
-                                        Xuáº¥t Excel
+                                        Xuất Excel
                                     </button>
                                 </div>
                             </div>
@@ -253,18 +253,18 @@
                                     <thead class="bg-gray-50 sticky top-0">
                                         <tr>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sá»‘ phiáº¿u thu</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MÃ£ tháº»</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TÃªn Há»c ViÃªn</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SÄT</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phá»¥ TrÃ¡ch</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GÃ³i Há»c</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số phiếu thu</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã thẻ</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HÃ¬nh thá»©c TT</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hình thức TT</th>
                                         </tr>
                                     </thead>
                                     <tbody id="qr-hv-table-body" class="divide-y divide-gray-200">
-                                        <tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">ChÆ°a cÃ³ há»c viÃªn nÃ o.</td></tr>
+                                        <tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Chưa có học viên nào.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -274,52 +274,52 @@
 
                 <div id="content-ql-hv" class="tab-panel">
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold">Quáº£n lÃ½ Há»c ViÃªn</h2>
+        <h2 class="text-2xl font-semibold">Quản lý Học Viên</h2>
         <div class="flex gap-2">
             <button id="hv-list-print-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                In Danh SÃ¡ch
+                In Danh Sách
             </button>
             <button id="hv-list-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-                Xuáº¥t Excel
+                Xuất Excel
             </button>
         </div>
     </div>
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class=""> 
-            <label for="hv-search-input" class="block text-sm font-medium text-gray-700">TÃ¬m kiáº¿m (TÃªn, SÄT, MÃ£ Tháº»)</label>
-            <input type="search" id="hv-search-input" placeholder="Nháº­p tá»« khoÃ¡..." class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+            <label for="hv-search-input" class="block text-sm font-medium text-gray-700">Tìm kiếm (Tên, SĐT, Mã Thẻ)</label>
+            <input type="search" id="hv-search-input" placeholder="Nhập từ khoá..." class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
         </div>
 
         <div class="md:col-span-2"> 
-            <label class="block text-sm font-medium text-gray-700">Lá»c nhanh</label>
+            <label class="block text-sm font-medium text-gray-700">Lọc nhanh</label>
             <div class="mt-1 flex rounded-lg shadow-sm">
                 <button id="filter-hv-today" class="filter-hv-btn relative inline-flex items-center justify-center w-1/4 px-2 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-                    HÃ´m nay
+                    Hôm nay
                 </button>
                 <button id="filter-hv-thangnay" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none hover:bg-indigo-700">
-                    ThÃ¡ng NÃ y
+                    Tháng Này
                 </button>
                 <button id="filter-hv-tuychinh" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-                    TÃ¹y chá»‰nh...
+                    Tùy chỉnh...
                 </button>
                 <button id="filter-hv-tatca" class="filter-hv-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-2 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-                    Táº£i ToÃ n Bá»™
+                    Tải Toàn Bộ
                 </button>
             </div>
 
             <div id="hv-custom-filter-container" class="hidden mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-md">
                 <div class="flex flex-col sm:flex-row gap-3 items-end">
                     <div class="w-full sm:w-auto">
-                        <label for="hv-date-from" class="block text-xs font-medium text-gray-600">Tá»« ngÃ y</label>
+                        <label for="hv-date-from" class="block text-xs font-medium text-gray-600">Từ ngày</label>
                         <input type="date" id="hv-date-from" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                     <div class="w-full sm:w-auto">
-                        <label for="hv-date-to" class="block text-xs font-medium text-gray-600">Äáº¿n ngÃ y</label>
+                        <label for="hv-date-to" class="block text-xs font-medium text-gray-600">Đến ngày</label>
                         <input type="date" id="hv-date-to" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                     <button id="hv-custom-filter-apply" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors text-sm shadow-sm">
-                        Lá»c dá»¯ liá»‡u
+                        Lọc dữ liệu
                     </button>
                 </div>
             </div>
@@ -331,19 +331,19 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MÃ£ Tháº»</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TÃªn Há»c ViÃªn</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SÄT</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NgÃ y Ghi Danh</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phá»¥ TrÃ¡ch</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GÃ³i Há»c</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Thẻ</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Học Viên</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày Ghi Danh</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">HLV Phụ Trách</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gói Học</th>
                     <th scope="col" class="relative px-6 py-3 admin-only">
-                        <span class="sr-only">HÃ nh Ä‘á»™ng</span>
+                        <span class="sr-only">Hành động</span>
                     </th>
                 </tr>
             </thead>
             <tbody id="hocvien-table-body" class="divide-y divide-gray-200">
-                <tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Äang táº£i danh sÃ¡ch há»c viÃªn...</td></tr>
+                <tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách học viên...</td></tr>
             </tbody>
         </table>
     </div>
@@ -351,9 +351,9 @@
 
                 <div id="content-ql-hlv" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold">Quáº£n lÃ½ Huáº¥n Luyá»‡n ViÃªn</h2>
+                        <h2 class="text-2xl font-semibold">Quản lý Huấn Luyện Viên</h2>
                         <button id="add-hlv-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
-                            + ThÃªm HLV Má»›i
+                            + Thêm HLV Mới
                         </button>
                     </div>
                     
@@ -361,19 +361,19 @@
                         <table class="min-w-full divide-y divide-gray-200 bg-white">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TÃªn HLV</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca Dáº¡y</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loáº¡i HLV</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thá»© tá»± Æ¯u tiÃªn</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sá»‘ HV Äang Dáº¡y</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tráº¡ng thÃ¡i</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca Dạy</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại HLV</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thứ tự Ưu tiên</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Đang Dạy</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                                     <th scope="col" class="relative px-6 py-3">
-                                        <span class="sr-only">HÃ nh Ä‘á»™ng</span>
+                                        <span class="sr-only">Hành động</span>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody id="hlv-table-body" class="divide-y divide-gray-200">
-                                <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Äang táº£i danh sÃ¡ch HLV...</td></tr>
+                                <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách HLV...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -381,13 +381,13 @@
 
                 <div id="content-bao-cao" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold">BÃ¡o cÃ¡o Doanh Thu</h2>
+                        <h2 class="text-2xl font-semibold">Báo cáo Doanh Thu</h2>
                         <div class="flex gap-2">
                             <button id="report-print-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300" disabled>
-                                In BÃ¡o CÃ¡o
+                                In Báo Cáo
                             </button>
                             <button id="report-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300" disabled>
-                                Xuáº¥t Excel
+                                Xuất Excel
                             </button>
                         </div>
                     </div>
@@ -395,44 +395,44 @@
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div>
-                                <label for="report-type" class="block text-sm font-medium text-gray-700">Loáº¡i BÃ¡o CÃ¡o</label>
+                                <label for="report-type" class="block text-sm font-medium text-gray-700">Loại Báo Cáo</label>
                                 <select id="report-type" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                    <option value="tongquan">BÃ¡o cÃ¡o Tá»•ng quan</option>
-                                    <option value="hlv">BÃ¡o cÃ¡o Thu nháº­p HLV</option>
-                                    <option value="doanhthu_chitiet">BÃ¡o cÃ¡o Doanh thu (Chi tiáº¿t)</option>
+                                    <option value="tongquan">Báo cáo Tổng quan</option>
+                                    <option value="hlv">Báo cáo Thu nhập HLV</option>
+                                    <option value="doanhthu_chitiet">Báo cáo Doanh thu (Chi tiết)</option>
                                 </select>
                             </div>
 
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Lá»c nhanh theo thá»i gian</label>
+                                <label class="block text-sm font-medium text-gray-700">Lọc nhanh theo thời gian</label>
                                 <div class="mt-1 flex rounded-lg shadow-sm">
                                     <button id="report-filter-today" class="report-quick-filter-btn relative inline-flex items-center justify-center w-1/4 px-4 py-3 rounded-l-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-                                        HÃ´m nay
+                                        Hôm nay
                                     </button>
                                     <button id="report-filter-this-month" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-4 py-3 border border-gray-300 bg-indigo-600 text-white text-sm font-medium focus:z-10 focus:outline-none hover:bg-indigo-700">
-                                        ThÃ¡ng nÃ y
+                                        Tháng này
                                     </button>
                                     <button id="report-filter-last-month" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-4 py-3 border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-                                        ThÃ¡ng trÆ°á»›c
+                                        Tháng trước
                                     </button>
                                     <button id="report-filter-custom" class="report-quick-filter-btn -ml-px relative inline-flex items-center justify-center w-1/4 px-4 py-3 rounded-r-md border border-gray-300 bg-white text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 text-sm font-medium focus:z-10 focus:outline-none">
-                                        TÃ¹y chá»‰nh...
+                                        Tùy chỉnh...
                                     </button>
                                 </div>
                             </div>
                             
                             <button id="report-view-btn" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                                 <span id="report-spinner" class="loader-sm hidden"></span>
-                                Xem BÃ¡o CÃ¡o
+                                Xem Báo Cáo
                             </button>
                             
                             <div id="report-date-range" class="md:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 hidden">
                                 <div>
-                                    <label for="report-start-date" class="block text-sm font-medium text-gray-700">Tá»« NgÃ y</label>
+                                    <label for="report-start-date" class="block text-sm font-medium text-gray-700">Từ Ngày</label>
                                     <input type="date" id="report-start-date" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                                 <div>
-                                    <label for="report-end-date" class="block text-sm font-medium text-gray-700">Äáº¿n NgÃ y</label>
+                                    <label for="report-end-date" class="block text-sm font-medium text-gray-700">Đến Ngày</label>
                                     <input type="date" id="report-end-date" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                             </div>
@@ -441,17 +441,17 @@
                     </div>
 
                     <div id="report-results-container">
-                        <p class="text-center text-gray-500">Vui lÃ²ng chá»n loáº¡i bÃ¡o cÃ¡o vÃ  thá»i gian, sau Ä‘Ã³ nháº¥n "Xem BÃ¡o CÃ¡o".</p>
+                        <p class="text-center text-gray-500">Vui lòng chọn loại báo cáo và thời gian, sau đó nhấn "Xem Báo Cáo".</p>
                     </div>
                 </div>
 
 
                 <div id="content-import" class="tab-panel">
-                    <h2 class="text-2xl font-semibold mb-6">Import Dá»¯ liá»‡u Há»c viÃªn (Excel)</h2>
+                    <h2 class="text-2xl font-semibold mb-6">Import Dữ liệu Học viên (Excel)</h2>
                     
                     <div class="max-w-xl space-y-6">
                         <div>
-                            <label for="import-file-input" class="block text-sm font-medium text-gray-700">Chá»n file (.xlsx, .xls)</label>
+                            <label for="import-file-input" class="block text-sm font-medium text-gray-700">Chọn file (.xlsx, .xls)</label>
                             <input type="file" id="import-file-input" 
                                    accept=".xlsx, .xls"
                                    class="mt-1 block w-full text-sm text-gray-500
@@ -461,57 +461,48 @@
                                           file:bg-indigo-50 file:text-indigo-700
                                           hover:file:bg-indigo-100">
                             <p class="mt-2 text-xs text-gray-600">
-                                **LÆ°u Ã½:** File pháº£i cÃ³ 6 cá»™t theo thá»© tá»±: 
-                                <strong class="font-medium">TÃªn Há»c ViÃªn, Sá»‘ Äiá»‡n Thoáº¡i, TÃªn GÃ³i Há»c, Há»c phÃ­, TÃªn HLV, Ca Dáº¡y</strong>.
+                                **Lưu ý:** File phải có 6 cột theo thứ tự: 
+                                <strong class="font-medium">Tên Học Viên, Số Điện Thoại, Tên Gói Học, Học phí, Tên HLV, Ca Dạy</strong>.
                             </p>
                         </div>
 
                         <button id="import-start-btn" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                             <span id="import-spinner" class="loader-sm hidden"></span>
-                            Tiáº¿n hÃ nh Import
+                            Tiến hành Import
                         </button>
 
                         <div id="import-results-container" class="hidden">
-                            <h3 class="text-lg font-medium text-gray-900">Káº¿t quáº£ Import</h3>
+                            <h3 class="text-lg font-medium text-gray-900">Kết quả Import</h3>
                             <div id="import-log" class="mt-2 p-4 bg-gray-900 text-white text-sm font-mono rounded-lg overflow-x-auto h-60">
-                                <p>Äang chá» xá»­ lÃ½...</p>
+                                <p>Đang chờ xử lý...</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div id="content-cai-dat" class="tab-panel">
-                    <h2 class="text-2xl font-semibold mb-6">CÃ i Äáº·t Há»‡ Thá»‘ng</h2>
+                    <h2 class="text-2xl font-semibold mb-6">Cài Đặt Hệ Thống</h2>
                     <div class="max-w-md space-y-4">
                         <div>
-                            <label for="setting-rate-hba" class="block text-sm font-medium text-gray-700">Tá»‰ lá»‡ HBA Nháº­n (%)</label>
-                            <input type="number" id="setting-rate-hba" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="VÃ­ dá»¥: 30">
+                            <label for="setting-rate-hba" class="block text-sm font-medium text-gray-700">Tỉ lệ HBA Nhận (%)</label>
+                            <input type="number" id="setting-rate-hba" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ví dụ: 30">
                         </div>
                         <div>
-                            <label for="setting-rate-tax" class="block text-sm font-medium text-gray-700">Thuáº¿ TNCN (%)</label>
-                            <input type="number" id="setting-rate-tax" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="VÃ­ dá»¥: 10">
+                            <label for="setting-rate-tax" class="block text-sm font-medium text-gray-700">Thuế TNCN (%)</label>
+                            <input type="number" id="setting-rate-tax" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ví dụ: 10">
                         </div>
                         <button id="save-settings-button" class="w-full flex justify-center items-center gap-3 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
                             <span id="settings-spinner" class="loader-sm hidden"></span>
-                            LÆ°u CÃ i Äáº·t
-                        </button>
-                    </div>
-
-                    <div class="max-w-md space-y-4 mt-12 pt-8 border-t border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-800">Quáº£n LÃ½ PhiÃªn Báº£n</h3>
-                        <p class="text-sm text-gray-600">Khi báº¡n cÃ³ thay Ä‘á»•i mÃ£ nguá»“n má»›i, nháº¥n nÃºt nÃ y Ä‘á»ƒ <strong>Ã©p táº¥t cáº£ trÃ¬nh duyá»‡t</strong> cá»§a nhÃ¢n viÃªn Ä‘ang sá»­ dá»¥ng tá»± Ä‘á»™ng táº£i láº¡i báº£n má»›i nháº¥t mÃ  khÃ´ng cáº§n F5.</p>
-                        <button id="release-update-button" class="w-full flex justify-center items-center gap-3 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
-                            <span id="release-spinner" class="loader-sm hidden"></span>
-                            ðŸš€ PhÃ¡t hÃ nh Cáº­p Nháº­t Má»›i
+                            Lưu Cài Đặt
                         </button>
                     </div>
                 </div>
 
                 <div id="content-goi-hoc" class="tab-panel">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold">Quáº£n lÃ½ GÃ³i Há»c</h2>
+                        <h2 class="text-2xl font-semibold">Quản lý Gói Học</h2>
                         <button id="add-goi-hoc-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
-                            + ThÃªm GÃ³i Má»›i
+                            + Thêm Gói Mới
                         </button>
                     </div>
                     
@@ -519,17 +510,17 @@
                         <table class="min-w-full divide-y divide-gray-200 bg-white">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TÃªn GÃ³i Há»c</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sá»‘ Buá»•i</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Há»c PhÃ­ (VNÄ)</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thá»i Háº¡n (NgÃ y)</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Gói Học</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số Buổi</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Học Phí (VNĐ)</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời Hạn (Ngày)</th>
                                     <th scope="col" class="relative px-6 py-3">
-                                        <span class="sr-only">HÃ nh Ä‘á»™ng</span>
+                                        <span class="sr-only">Hành động</span>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody id="goi-hoc-table-body" class="divide-y divide-gray-200">
-                                <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Äang táº£i danh sÃ¡ch gÃ³i há»c...</td></tr>
+                                <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Đang tải danh sách gói học...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -541,64 +532,56 @@
 
     <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl">
-            <h3 id="modal-title" class="text-xl font-semibold text-gray-900 mb-4">ThÃ´ng bÃ¡o</h3>
-            <p id="modal-message" class="text-gray-700 mb-6">Ná»™i dung thÃ´ng bÃ¡o...</p>
+            <h3 id="modal-title" class="text-xl font-semibold text-gray-900 mb-4">Thông báo</h3>
+            <p id="modal-message" class="text-gray-700 mb-6">Nội dung thông báo...</p>
             <button id="modal-close-button" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-                ÄÃ£ Hiá»ƒu
+                Đã Hiểu
             </button>
         </div>
     </div>
 
     <div id="delete-confirm-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl">
-            <h3 class="text-xl font-semibold text-red-600 mb-4">XÃ¡c nháº­n XoÃ¡</h3>
-            <p id="delete-message" class="text-gray-700 mb-6">Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xoÃ¡ má»¥c nÃ y khÃ´ng? HÃ nh Ä‘á»™ng nÃ y khÃ´ng thá»ƒ hoÃ n tÃ¡c.</p>
+            <h3 class="text-xl font-semibold text-red-600 mb-4">Xác nhận Xoá</h3>
+            <p id="delete-message" class="text-gray-700 mb-6">Bạn có chắc chắn muốn xoá mục này không? Hành động này không thể hoàn tác.</p>
             <div class="flex justify-end gap-4">
                 <button id="delete-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
-                    Huá»·
+                    Huỷ
                 </button>
                 <button id="delete-confirm-button" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
-                    XÃ¡c nháº­n XoÃ¡
+                    Xác nhận Xoá
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="update-reload-modal" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-[200] hidden">
-        <div class="bg-white w-full max-w-sm p-8 rounded-lg shadow-2xl text-center">
-            <div class="loader mx-auto mb-6"></div>
-            <h3 class="text-xl font-bold text-indigo-700 mb-2">Äang NÃ¢ng Cáº¥p Há»‡ Thá»‘ng</h3>
-            <p class="text-gray-600 text-sm">Há»‡ thá»‘ng vá»«a phÃ¡t hÃ nh phiÃªn báº£n má»›i.<br>TrÃ¬nh duyá»‡t Ä‘ang tá»± Ä‘á»™ng táº£i láº¡i Ä‘á»ƒ Ã¡p dá»¥ng...</p>
-        </div>
-    </div>
-
     <div id="goi-hoc-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-lg p-6 rounded-lg shadow-xl">
-            <h3 id="goi-hoc-modal-title" class="text-xl font-semibold text-gray-900 mb-6">ThÃªm GÃ³i Há»c Má»›i</h3>
+            <h3 id="goi-hoc-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Thêm Gói Học Mới</h3>
             <form id="goi-hoc-form" class="space-y-4">
                 <input type="hidden" id="goi-hoc-id">
                 <div>
-                    <label for="goi-hoc-ten" class="block text-sm font-medium text-gray-700">TÃªn GÃ³i Há»c</label>
+                    <label for="goi-hoc-ten" class="block text-sm font-medium text-gray-700">Tên Gói Học</label>
                     <input type="text" id="goi-hoc-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label for="goi-hoc-so-buoi" class="block text-sm font-medium text-gray-700">Sá»‘ Buá»•i</label>
+                    <label for="goi-hoc-so-buoi" class="block text-sm font-medium text-gray-700">Số Buổi</label>
                     <input type="number" id="goi-hoc-so-buoi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label for="goi-hoc-hoc-phi" class="block text-sm font-medium text-gray-700">Há»c PhÃ­ (VNÄ)</label>
+                    <label for="goi-hoc-hoc-phi" class="block text-sm font-medium text-gray-700">Học Phí (VNĐ)</label>
                     <input type="number" id="goi-hoc-hoc-phi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label for="goi-hoc-thoi-han" class="block text-sm font-medium text-gray-700">Thá»i Háº¡n (Sá»‘ ngÃ y)</label>
+                    <label for="goi-hoc-thoi-han" class="block text-sm font-medium text-gray-700">Thời Hạn (Số ngày)</label>
                     <input type="number" id="goi-hoc-thoi-han" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div class="flex justify-end gap-4 pt-4">
                     <button type="button" id="goi-hoc-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
-                        Huá»·
+                        Huỷ
                     </button>
                     <button type="submit" id="goi-hoc-save-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
-                        LÆ°u
+                        Lưu
                     </button>
                 </div>
             </form>
@@ -607,37 +590,37 @@
 
     <div id="hlv-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-lg p-6 rounded-lg shadow-xl">
-            <h3 id="hlv-modal-title" class="text-xl font-semibold text-gray-900 mb-6">ThÃªm HLV Má»›i</h3>
+            <h3 id="hlv-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Thêm HLV Mới</h3>
             <form id="hlv-form" class="space-y-4">
                 <input type="hidden" id="hlv-id">
                 <div>
-                    <label for="hlv-ten" class="block text-sm font-medium text-gray-700">TÃªn HLV</label>
+                    <label for="hlv-ten" class="block text-sm font-medium text-gray-700">Tên HLV</label>
                     <input type="text" id="hlv-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label for="hlv-ca-day" class="block text-sm font-medium text-gray-700">Ca Dáº¡y</M>
+                    <label for="hlv-ca-day" class="block text-sm font-medium text-gray-700">Ca Dạy</M>
                     <select id="hlv-ca-day" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                        <option value="SÃ¡ng">SÃ¡ng</option>
-                        <option value="Chiá»u">Chiá»u</option>
+                        <option value="Sáng">Sáng</option>
+                        <option value="Chiều">Chiều</option>
                     </select>
                 </div>
                 <div>
-                    <label for="hlv-loai" class="block text-sm font-medium text-gray-700">Loáº¡i HLV</label>
+                    <label for="hlv-loai" class="block text-sm font-medium text-gray-700">Loại HLV</label>
                     <select id="hlv-loai" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                        <option value="Tá»± Ä‘á»™ng">Tá»± Ä‘á»™ng (VÃ o vÃ²ng quay)</option>
-                        <option value="Chá»‰ Äá»‹nh">Chá»‰ Äá»‹nh (KhÃ´ng vÃ o vÃ²ng quay)</option>
+                        <option value="Tự động">Tự động (Vào vòng quay)</option>
+                        <option value="Chỉ Định">Chỉ Định (Không vào vòng quay)</option>
                     </select>
                 </div>
                 <div>
-                    <label for="hlv-uu-tien" class="block text-sm font-medium text-gray-700">Thá»© tá»± Æ°u tiÃªn (Sá»‘ nhá» Æ°u tiÃªn cao)</label>
+                    <label for="hlv-uu-tien" class="block text-sm font-medium text-gray-700">Thứ tự ưu tiên (Số nhỏ ưu tiên cao)</label>
                     <input type="number" id="hlv-uu-tien" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value="99">
                 </div>
                 <div class="flex justify-end gap-4 pt-4">
                     <button type="button" id="hlv-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
-                        Huá»·
+                        Huỷ
                     </button>
                     <button type="submit" id="hlv-save-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
-                        LÆ°u
+                        Lưu
                     </button>
                 </div>
             </form>
@@ -646,84 +629,84 @@
     
     <div id="hocvien-edit-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
         <div class="modal-content bg-white w-full max-w-2xl p-6 rounded-lg shadow-xl">
-            <h3 id="hocvien-edit-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Sá»­a ThÃ´ng Tin Há»c ViÃªn</h3>
+            <h3 id="hocvien-edit-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Sửa Thông Tin Học Viên</h3>
             <form id="hocvien-edit-form" class="space-y-4">
                 <input type="hidden" id="hocvien-edit-id">
                 <input type="hidden" id="hocvien-edit-thoi-han"> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="hocvien-edit-ten" class="block text-sm font-medium text-gray-700">TÃªn Há»c ViÃªn</label>
+                        <label for="hocvien-edit-ten" class="block text-sm font-medium text-gray-700">Tên Học Viên</label>
                         <input type="text" id="hocvien-edit-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                     <div>
-                        <label for="hocvien-edit-sdt" class="block text-sm font-medium text-gray-700">Sá»‘ Äiá»‡n Thoáº¡i</label>
+                        <label for="hocvien-edit-sdt" class="block text-sm font-medium text-gray-700">Số Điện Thoại</label>
                         <input type="tel" id="hocvien-edit-sdt" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div>
-                        <label for="hocvien-edit-mathe" class="block text-sm font-medium text-gray-700">MÃ£ Tháº»</label>
+                        <label for="hocvien-edit-mathe" class="block text-sm font-medium text-gray-700">Mã Thẻ</label>
                         <input type="text" id="hocvien-edit-mathe" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                     <div>
-                        <label for="hocvien-edit-phieuthu" class="block text-sm font-medium text-gray-700">Sá»‘ Phiáº¿u Thu</label>
+                        <label for="hocvien-edit-phieuthu" class="block text-sm font-medium text-gray-700">Số Phiếu Thu</label>
                         <input type="text" id="hocvien-edit-phieuthu" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>
 
                 <div class="p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-3">
-                    <label class="block text-sm font-bold text-gray-700">HÃ¬nh thá»©c thanh toÃ¡n</label>
+                    <label class="block text-sm font-bold text-gray-700">Hình thức thanh toán</label>
                     <input type="hidden" id="hocvien-edit-hocphi-value">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                            <label for="edit-ttTienMat" class="block text-xs font-medium text-gray-600">ðŸ’µ Tiá»n máº·t</label>
+                            <label for="edit-ttTienMat" class="block text-xs font-medium text-gray-600">💵 Tiền mặt</label>
                             <input type="number" id="edit-ttTienMat" min="0" value="0" class="edit-tt-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                         </div>
                         <div>
-                            <label for="edit-ttChuyenKhoan" class="block text-xs font-medium text-gray-600">ðŸ¦ Chuyá»ƒn khoáº£n</label>
+                            <label for="edit-ttChuyenKhoan" class="block text-xs font-medium text-gray-600">🏦 Chuyển khoản</label>
                             <input type="number" id="edit-ttChuyenKhoan" min="0" value="0" class="edit-tt-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                         </div>
                         <div>
-                            <label for="edit-ttQuetThe" class="block text-xs font-medium text-gray-600">ðŸ’³ Quáº¹t tháº»</label>
+                            <label for="edit-ttQuetThe" class="block text-xs font-medium text-gray-600">💳 Quẹt thẻ</label>
                             <input type="number" id="edit-ttQuetThe" min="0" value="0" class="edit-tt-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
                         </div>
                     </div>
                     <div id="editTtStatus" class="text-sm font-semibold text-gray-500 text-right">
-                        Tá»•ng: 0 / Há»c phÃ­: 0 VNÄ
+                        Tổng: 0 / Học phí: 0 VNĐ
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="hocvien-edit-goihoc" class="block text-sm font-medium text-gray-700">GÃ³i Há»c (Chá»‰ xem)</label>
+                        <label for="hocvien-edit-goihoc" class="block text-sm font-medium text-gray-700">Gói Học (Chỉ xem)</label>
                         <input type="text" id="hocvien-edit-goihoc" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
                     </div>
                     <div>
-                        <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phá»¥ TrÃ¡ch (CÃ³ thá»ƒ sá»­a)</label>
+                        <label for="hocvien-edit-hlv" class="block text-sm font-medium text-gray-700">HLV Phụ Trách (Có thể sửa)</label>
                         <select id="hocvien-edit-hlv" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                            <option value="">-- Äang táº£i danh sÃ¡ch HLV --</option>
+                            <option value="">-- Đang tải danh sách HLV --</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 pb-2 border-t border-b border-gray-200">
                     <div>
-                        <label for="hocvien-edit-ngayghi" class="block text-sm font-medium text-gray-700">NgÃ y Ghi Danh (CÃ³ thá»ƒ sá»­a)</label>
+                        <label for="hocvien-edit-ngayghi" class="block text-sm font-medium text-gray-700">Ngày Ghi Danh (Có thể sửa)</label>
                         <input type="date" id="hocvien-edit-ngayghi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        <p class="text-xs text-gray-500 mt-1">Sá»­a ngÃ y nÃ y sáº½ tá»± Ä‘á»™ng tÃ­nh láº¡i ngÃ y háº¿t háº¡n.</p>
+                        <p class="text-xs text-gray-500 mt-1">Sửa ngày này sẽ tự động tính lại ngày hết hạn.</p>
                     </div>
                     <div>
-                        <label for="hocvien-edit-ngayhet" class="block text-sm font-medium text-gray-700">NgÃ y Háº¿t Háº¡n (Tá»± Ä‘á»™ng)</label>
+                        <label for="hocvien-edit-ngayhet" class="block text-sm font-medium text-gray-700">Ngày Hết Hạn (Tự động)</label>
                         <input type="date" id="hocvien-edit-ngayhet" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
                     </div>
                 </div>
                 
                 <div class="flex justify-end gap-4 pt-4">
                     <button type="button" id="hocvien-edit-cancel-button" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
-                        Huá»·
+                        Huỷ
                     </button>
                     <button type="submit" id="hocvien-edit-save-button" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
-                        LÆ°u Thay Äá»•i
+                        Lưu Thay Đổi
                     </button>
                 </div>
             </form>
@@ -738,6 +721,5 @@
     
 </body>
 </html>
-
 
 
