@@ -1778,13 +1778,17 @@ const renderTongQuanReport = (data, startDate, endDate) => {
 };
 
 // CẬP NHẬT: Thêm cột Tổng Hoa Hồng
+let currentHlvReportSort = { key: 'tongThucNhan', dir: -1 };
+
 const renderHLVReport = (data, startDate, endDate) => {
     const reportByHLV = {};
     data.forEach(hv => {
         const hlvId = hv.hlvId;
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
-            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
+            const hlvObj = globalHLVList.find(h => h.id === hlvId);
+            const caDay = hlvObj ? hlvObj.caDay : 'N/A';
+            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++;
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
@@ -1793,7 +1797,27 @@ const renderHLVReport = (data, startDate, endDate) => {
         reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
 
-    const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
+    let reportArray = Object.values(reportByHLV);
+    
+    reportArray.sort((a, b) => {
+        const key = currentHlvReportSort.key;
+        const dir = currentHlvReportSort.dir;
+        let valA = a[key];
+        let valB = b[key];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        
+        if (valA < valB) return -1 * dir;
+        if (valA > valB) return 1 * dir;
+        return 0;
+    });
+
+    const getSortIcon = (key) => {
+        if (currentHlvReportSort.key === key) {
+            return currentHlvReportSort.dir === 1 ? '↑' : '↓';
+        }
+        return '↕';
+    };
 
     const html = `
         <h3 class="text-xl font-semibold mb-4 text-gray-800">Báo Cáo Thu Nhập HLV</h3>
@@ -1805,20 +1829,22 @@ const renderHLVReport = (data, startDate, endDate) => {
             <table class="min-w-full divide-y divide-gray-200 bg-white">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Mới</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Hoa Hồng (Gross)</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuế Phải Nộp</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thực Nhận (Net)</th>
+                        <th scope="col" data-key="tenHLV" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tên HLV <span class="text-gray-400 ml-1">${getSortIcon('tenHLV')}</span></th>
+                        <th scope="col" data-key="caDay" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Ca Dạy <span class="text-gray-400 ml-1">${getSortIcon('caDay')}</span></th>
+                        <th scope="col" data-key="soHVMoi" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Số HV Mới <span class="text-gray-400 ml-1">${getSortIcon('soHVMoi')}</span></th>
+                        <th scope="col" data-key="tongDoanhThu" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tổng Doanh Thu <span class="text-gray-400 ml-1">${getSortIcon('tongDoanhThu')}</span></th>
+                        <th scope="col" data-key="tongHoaHong" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tổng Hoa Hồng (Gross) <span class="text-gray-400 ml-1">${getSortIcon('tongHoaHong')}</span></th>
+                        <th scope="col" data-key="tongThue" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Thuế Phải Nộp <span class="text-gray-400 ml-1">${getSortIcon('tongThue')}</span></th>
+                        <th scope="col" data-key="tongThucNhan" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Thực Nhận (Net) <span class="text-gray-400 ml-1">${getSortIcon('tongThucNhan')}</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     ${reportArray.length === 0 
-                        ? `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu.</td></tr>`
+                        ? `<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu.</td></tr>`
                         : reportArray.map(hlv => `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.caDay}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHVMoi}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">${formatCurrency(hlv.tongHoaHong)} VNĐ</td>
@@ -1832,6 +1858,20 @@ const renderHLVReport = (data, startDate, endDate) => {
         </div>
     `;
     reportResultsContainer.innerHTML = html;
+
+    const ths = reportResultsContainer.querySelectorAll('.hlv-sort-th');
+    ths.forEach(th => {
+        th.addEventListener('click', () => {
+            const key = th.dataset.key;
+            if (currentHlvReportSort.key === key) {
+                currentHlvReportSort.dir *= -1;
+            } else {
+                currentHlvReportSort.key = key;
+                currentHlvReportSort.dir = -1;
+            }
+            renderHLVReport(data, startDate, endDate);
+        });
+    });
 };
 
 const renderDoanhThuChiTietReport = (data, startDate, endDate) => {
@@ -1926,7 +1966,9 @@ const generateHLVReportPrintHTML = (data) => {
         const hlvId = hv.hlvId;
         if (!hlvId) return;
         if (!reportByHLV[hlvId]) {
-            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
+            const hlvObj = globalHLVList.find(h => h.id === hlvId);
+            const caDay = hlvObj ? hlvObj.caDay : 'N/A';
+            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++; 
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
@@ -1941,6 +1983,7 @@ const generateHLVReportPrintHTML = (data) => {
             <thead style="background-color: #f3f4f6;">
                 <tr>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tên HLV</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Ca Dạy</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Số HV</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tổng Doanh Thu</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tổng Hoa Hồng</th> <th style="border: 1px solid #ddd; padding: 8px;">Thuế</th>
@@ -1951,6 +1994,7 @@ const generateHLVReportPrintHTML = (data) => {
                 ${reportArray.map(hlv => `
                     <tr>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.tenHLV}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${hlv.caDay}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHVMoi}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongDoanhThu)}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongHoaHong)}</td> <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongThue)}</td>
@@ -2095,7 +2139,9 @@ const handleExportExcel = () => {
                 const hlvId = hv.hlvId;
                 if (!hlvId) return;
                 if (!reportByHLV[hlvId]) { 
-                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 }; 
+                    const hlvObj = globalHLVList.find(h => h.id === hlvId);
+                    const caDay = hlvObj ? hlvObj.caDay : 'N/A';
+                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 }; 
                 }
                 reportByHLV[hlvId].soHVMoi++; 
                 reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
@@ -2107,14 +2153,14 @@ const handleExportExcel = () => {
             
             dataForSheet = [
                 ["BÁO CÁO THU NHẬP HLV"], [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`], [],
-                ["Tên HLV", "Số HV Mới", "Tổng Doanh Thu", "Tổng Hoa Hồng (Gross)", "Thuế Phải Nộp", "Thực Nhận (Net)"]
+                ["Tên HLV", "Ca Dạy", "Số HV Mới", "Tổng Doanh Thu", "Tổng Hoa Hồng (Gross)", "Thuế Phải Nộp", "Thực Nhận (Net)"]
             ];
             reportArray.forEach(hlv => {
-                dataForSheet.push([hlv.tenHLV, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
+                dataForSheet.push([hlv.tenHLV, hlv.caDay, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
             });
             
             // Cấu hình độ rộng cột cho HLV
-            colWidths = [ { wch: 30 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
+            colWidths = [ { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
         
         } else if (currentReportType === 'doanhthu_chitiet') {
             sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
