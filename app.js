@@ -1279,6 +1279,7 @@ const handlePrintQuickReport = () => {
                     <th style="border: 1px solid #ddd; padding: 6px;">Mã thẻ</th>
                     <th style="border: 1px solid #ddd; padding: 6px;">Tên Học Viên</th>
                     <th style="border: 1px solid #ddd; padding: 6px;">SĐT</th>
+                    <th style="border: 1px solid #ddd; padding: 6px;">Ngày Sinh</th>
                     <th style="border: 1px solid #ddd; padding: 6px;">HLV</th>
                     <th style="border: 1px solid #ddd; padding: 6px;">Gói Học</th>
                     <th style="border: 1px solid #ddd; padding: 6px;">Doanh thu</th>
@@ -1300,6 +1301,7 @@ const handlePrintQuickReport = () => {
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.maThe || ''}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.sdtHV}</td>
+                        <td style="border: 1px solid #ddd; padding: 6px;">${formatNgaySinhStr(hv.ngaySinh)}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${hv.tenGoiHoc}</td>
                         <td style="border: 1px solid #ddd; padding: 6px;">${formatCurrency(hv.hocPhi)}</td>
@@ -1357,7 +1359,7 @@ const handleExportQuickReport = () => {
         const dataForSheet = [
             [`BÁO CÁO DOANH THU HỌC BƠI NGÀY ${dateLabel}`],
             [],
-            ["STT", "Số phiếu thu", "Mã thẻ", "Tên Học Viên", "SĐT", "HLV Phụ Trách", "Gói Học", "Doanh thu", "Hình thức TT"]
+            ["STT", "Số phiếu thu", "Mã thẻ", "Tên Học Viên", "SĐT", "Ngày Sinh", "HLV Phụ Trách", "Gói Học", "Doanh thu", "Hình thức TT"]
         ];
 
         quickReportData.forEach((hv, index) => {
@@ -1368,7 +1370,7 @@ const handleExportQuickReport = () => {
             totalDoanhThu += hv.hocPhi;
 
             dataForSheet.push([
-                index + 1, hv.soPhieuThu, hv.maThe, hv.tenHV, hv.sdtHV, hv.tenHLV, hv.tenGoiHoc, hv.hocPhi, formatThanhToanDisplay(hv)
+                index + 1, hv.soPhieuThu, hv.maThe, hv.tenHV, hv.sdtHV, formatNgaySinhStr(hv.ngaySinh), hv.tenHLV, hv.tenGoiHoc, hv.hocPhi, formatThanhToanDisplay(hv)
             ]);
         });
         
