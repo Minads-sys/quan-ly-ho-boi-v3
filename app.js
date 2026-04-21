@@ -1899,6 +1899,8 @@ const renderHLVReport = (data, startDate, endDate) => {
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.caDay}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHV_6_8}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHV_gt_8}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHVMoi}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatCurrency(hlv.tongDoanhThu)} VNĐ</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">${formatCurrency(hlv.tongHoaHong)} VNĐ</td>
