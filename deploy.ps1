@@ -4,7 +4,7 @@ Write-Host "BAT DAU DEPLOY PHIEN BAN: $timestamp" -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
 
 $htmlPath = "app.html"
-$htmlContent = Get-Content $htmlPath -Raw
+$htmlContent = Get-Content $htmlPath -Raw -Encoding UTF8
 
 # Cap nhat app.css
 $htmlContent = $htmlContent -replace 'app\.css(\?v=\d+)?', "app.css?v=$timestamp"
