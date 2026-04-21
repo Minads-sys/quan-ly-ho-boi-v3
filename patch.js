@@ -1,40 +1,58 @@
 const fs = require('fs');
+
 let code = fs.readFileSync('app.js', 'utf8');
 
+// 1. Selectors
 code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên HLV<\/th>/,
-    `<th scope="col" data-key="tenHLV" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tên HLV <span class="text-gray-400 ml-1">\${getSortIcon('tenHLV')}</span></th>`
+    /const nhomTuoiSelect = document\.getElementById\('nhomTuoi'\);/,
+    `const ngaySinhInput = document.getElementById('ngaySinh');`
 );
 
 code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ca Dạy<\/th>/,
-    `<th scope="col" data-key="caDay" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Ca Dạy <span class="text-gray-400 ml-1">\${getSortIcon('caDay')}</span></th>`
+    /const hocVienEditSdtInput = document\.getElementById\('hocvien-edit-sdt'\);/,
+    `const hocVienEditSdtInput = document.getElementById('hocvien-edit-sdt');\nconst hocVienEditNgaySinhInput = document.getElementById('hocvien-edit-ngaysinh');`
+);
+
+// 2. Add calculateNhomTuoi function after global variables
+code = code.replace(
+    /let currentUser = null;/,
+    `let currentUser = null;\n\nconst calculateNhomTuoi = (ngaySinhStr) => {\n    if (!ngaySinhStr) return 'N/A';\n    const dob = new Date(ngaySinhStr);\n    const today = new Date();\n    let age = today.getFullYear() - dob.getFullYear();\n    const m = today.getMonth() - dob.getMonth();\n    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {\n        age--;\n    }\n    return age <= 8 ? '6-8' : '>8';\n};`
+);
+
+// 3. Event listeners
+code = code.replace(
+    /nhomTuoiSelect\.addEventListener\('change', autoSelectHLV\);/,
+    `ngaySinhInput.addEventListener('change', autoSelectHLV);`
+);
+
+// 4. In autoSelectHLV
+code = code.replace(
+    /const hlv = findBestHLV\(caHocSelect\.value, nhomTuoiSelect\.value\);/,
+    `const hlv = findBestHLV(caHocSelect.value, calculateNhomTuoi(ngaySinhInput.value));`
+);
+
+// 5. In ghiDanhForm submit
+code = code.replace(
+    /const nhomTuoi = nhomTuoiSelect\.value;/,
+    `const ngaySinh = ngaySinhInput.value;\n    const nhomTuoi = calculateNhomTuoi(ngaySinh);`
 );
 
 code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HV Mới<\/th>/,
-    `<th scope="col" data-key="soHVMoi" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Số HV Mới <span class="text-gray-400 ml-1">\${getSortIcon('soHVMoi')}</span></th>`
+    /tenHV, sdtHV, nhomTuoi, caHoc,/,
+    `tenHV, sdtHV, ngaySinh, nhomTuoi, caHoc,`
 );
 
+// 6. In openHocVienEditModal
 code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Doanh Thu<\/th>/,
-    `<th scope="col" data-key="tongDoanhThu" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tổng Doanh Thu <span class="text-gray-400 ml-1">\${getSortIcon('tongDoanhThu')}</span></th>`
+    /hocVienEditSdtInput\.value = hocvien\.sdtHV;/,
+    `hocVienEditSdtInput.value = hocvien.sdtHV;\n    hocVienEditNgaySinhInput.value = hocvien.ngaySinh || '';`
 );
 
+// 7. In edit form submit
 code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Hoa Hồng \(Gross\)<\/th>/,
-    `<th scope="col" data-key="tongHoaHong" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tổng Hoa Hồng (Gross) <span class="text-gray-400 ml-1">\${getSortIcon('tongHoaHong')}</span></th>`
-);
-
-code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thuế Phải Nộp<\/th>/,
-    `<th scope="col" data-key="tongThue" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Thuế Phải Nộp <span class="text-gray-400 ml-1">\${getSortIcon('tongThue')}</span></th>`
-);
-
-code = code.replace(
-    /<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thực Nhận \(Net\)<\/th>/,
-    `<th scope="col" data-key="tongThucNhan" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Thực Nhận (Net) <span class="text-gray-400 ml-1">\${getSortIcon('tongThucNhan')}</span></th>`
+    /tenHV: hocVienEditTenInput\.value\.trim\(\),\s*sdtHV: hocVienEditSdtInput\.value\.trim\(\),/,
+    `tenHV: hocVienEditTenInput.value.trim(),\n            sdtHV: hocVienEditSdtInput.value.trim(),\n            ngaySinh: hocVienEditNgaySinhInput.value,\n            nhomTuoi: hocVienEditNgaySinhInput.value ? calculateNhomTuoi(hocVienEditNgaySinhInput.value) : (globalHocVienList.find(h => h.id === editId)?.nhomTuoi || 'N/A'),`
 );
 
 fs.writeFileSync('app.js', code, 'utf8');
-console.log('done');
+console.log('done patch.js');

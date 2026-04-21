@@ -6,7 +6,7 @@
     <title>Quản lý Hồ bơi HBA V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="app.css?v=20260421123422">
+    <link rel="stylesheet" href="app.css?v=20260421130415">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -132,11 +132,8 @@
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div>
-                                    <label for="nhomTuoi" class="block text-sm font-medium text-gray-700">Nhóm Tuổi <span class="text-red-500">*</span></label>
-                                    <select id="nhomTuoi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                                        <option value="6-8">6-8 tuổi</option>
-                                        <option value=">8">&gt; 8 tuổi</option>
-                                    </select>
+                                    <label for="ngaySinh" class="block text-sm font-medium text-gray-700">Ngày Sinh <span class="text-red-500">*</span></label>
+                                    <input type="date" id="ngaySinh" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
                                 </div>
                                 <div>
                                     <label for="caHoc" class="block text-sm font-medium text-gray-700">Ca Học <span class="text-red-500">*</span></label>
@@ -664,7 +661,7 @@
             <h3 id="hocvien-edit-modal-title" class="text-xl font-semibold text-gray-900 mb-6">Sửa Thông Tin Học Viên</h3>
             <form id="hocvien-edit-form" class="space-y-4">
                 <input type="hidden" id="hocvien-edit-id">
-                <input type="hidden" id="hocvien-edit-thoi-han"> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="hidden" id="hocvien-edit-thoi-han"> <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label for="hocvien-edit-ten" class="block text-sm font-medium text-gray-700">Tên Học Viên</label>
                         <input type="text" id="hocvien-edit-ten" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
@@ -672,6 +669,10 @@
                     <div>
                         <label for="hocvien-edit-sdt" class="block text-sm font-medium text-gray-700">Số Điện Thoại</label>
                         <input type="tel" id="hocvien-edit-sdt" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="hocvien-edit-ngaysinh" class="block text-sm font-medium text-gray-700">Ngày Sinh</label>
+                        <input type="date" id="hocvien-edit-ngaysinh" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                 </div>
 
@@ -765,10 +766,11 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
     </button>
 
-    <script type="module" src="app.js?v=20260421123422"></script>
+    <script type="module" src="app.js?v=20260421130415"></script>
     
 </body>
 </html>
+
 
 
 

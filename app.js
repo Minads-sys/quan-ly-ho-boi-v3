@@ -40,6 +40,18 @@ const db = getFirestore(app);
 
 // --- BIẾN TOÀN CỤC ---
 let currentUser = null;
+
+const calculateNhomTuoi = (ngaySinhStr) => {
+    if (!ngaySinhStr) return 'N/A';
+    const dob = new Date(ngaySinhStr);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+    return age <= 8 ? '6-8' : '>8';
+};
 let currentUserRole = null; // 'admin', 'letan', or null
 let initialAppVersion = null; // Dùng để track reload
 let globalRateHBA = 0;
@@ -150,7 +162,7 @@ const chkChiDinh = document.getElementById('chkChiDinh');
 const chiDinhDropdownContainer = document.getElementById('chi-dinh-dropdown-container');
 const hlvChiDinhSelect = document.getElementById('hlvChiDinh');
 const caHocSelect = document.getElementById('caHoc');
-const nhomTuoiSelect = document.getElementById('nhomTuoi');
+const ngaySinhInput = document.getElementById('ngaySinh');
 const ghiDanhSubmitButton = document.getElementById('ghi-danh-submit-button');
 const ghiDanhSpinner = document.getElementById('ghi-danh-spinner');
 const ghiDanhResetButton = document.getElementById('ghi-danh-reset-button');
@@ -188,6 +200,7 @@ const hocVienEditIdInput = document.getElementById('hocvien-edit-id');
 const hocVienEditThoiHanInput = document.getElementById('hocvien-edit-thoi-han');
 const hocVienEditTenInput = document.getElementById('hocvien-edit-ten');
 const hocVienEditSdtInput = document.getElementById('hocvien-edit-sdt');
+const hocVienEditNgaySinhInput = document.getElementById('hocvien-edit-ngaysinh');
 const hocVienEditMaTheInput = document.getElementById('hocvien-edit-mathe');
 const hocVienEditPhieuThuInput = document.getElementById('hocvien-edit-phieuthu');
 const hocVienEditGoiHocInput = document.getElementById('hocvien-edit-goihoc');
@@ -908,7 +921,7 @@ chkChiDinh.addEventListener('change', () => {
     }
 });
 caHocSelect.addEventListener('change', autoSelectHLV);
-nhomTuoiSelect.addEventListener('change', autoSelectHLV);
+ngaySinhInput.addEventListener('change', autoSelectHLV);
 hlvChiDinhSelect.addEventListener('change', () => {
     if (chkChiDinh.checked) {
         const hlv = globalHLVList.find(h => h.id === hlvChiDinhSelect.value);
@@ -946,7 +959,7 @@ function findBestHLV(caDay, nhomTuoi) {
 
 function autoSelectHLV() {
     if (chkChiDinh.checked) return;
-    const hlv = findBestHLV(caHocSelect.value, nhomTuoiSelect.value);
+    const hlv = findBestHLV(caHocSelect.value, calculateNhomTuoi(ngaySinhInput.value));
     displayHLV.textContent = hlv ? hlv.tenHLV : "Không tìm thấy HLV phù hợp";
 };
 
@@ -956,7 +969,8 @@ ghiDanhForm.addEventListener('submit', async (e) => {
     const sdtHV = sdtHVInput.value.trim();
     const goiHocId = goiHocSelect.value;
     const caHoc = caHocSelect.value;
-    const nhomTuoi = nhomTuoiSelect.value;
+    const ngaySinh = ngaySinhInput.value;
+    const nhomTuoi = calculateNhomTuoi(ngaySinh);
 
     if (!tenHV || !sdtHV || !goiHocId) {
         showModal("Vui lòng điền đầy đủ thông tin bắt buộc.", "Thiếu thông tin");
@@ -1008,7 +1022,7 @@ ghiDanhForm.addEventListener('submit', async (e) => {
         const hlvThucNhan = tongHoaHong - thue;
 
         const hocVienData = {
-            tenHV, sdtHV, nhomTuoi, caHoc,
+            tenHV, sdtHV, ngaySinh, nhomTuoi, caHoc,
             hinhThucThanhToan,
             thanhToanChiTiet,
             maThe: maTheInput.value.trim(),
@@ -1511,6 +1525,7 @@ const openHocVienEditModal = (hocvien) => {
     
     hocVienEditTenInput.value = hocvien.tenHV;
     hocVienEditSdtInput.value = hocvien.sdtHV;
+    hocVienEditNgaySinhInput.value = hocvien.ngaySinh || '';
     hocVienEditMaTheInput.value = hocvien.maThe || '';
     hocVienEditPhieuThuInput.value = hocvien.soPhieuThu || '';
     hocVienEditGoiHocInput.value = hocvien.tenGoiHoc;
@@ -1607,6 +1622,8 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         const dataToUpdate = {
             tenHV: hocVienEditTenInput.value.trim(),
             sdtHV: hocVienEditSdtInput.value.trim(),
+            ngaySinh: hocVienEditNgaySinhInput.value,
+            nhomTuoi: hocVienEditNgaySinhInput.value ? calculateNhomTuoi(hocVienEditNgaySinhInput.value) : (globalHocVienList.find(h => h.id === editId)?.nhomTuoi || 'N/A'),
             maThe: hocVienEditMaTheInput.value.trim(),
             soPhieuThu: hocVienEditPhieuThuInput.value.trim(),
             hinhThucThanhToan,
