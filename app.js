@@ -396,7 +396,8 @@ const showCustomConfirm = (message, title = "Xác nhận") => {
         genericConfirmCancel.addEventListener('click', handleCancel);
     });
 };
-\nconst showModal = (message, title = "Thông báo") => {
+
+const showModal = (message, title = "Thông báo") => {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
     customModal.classList.remove('hidden');
