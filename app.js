@@ -362,7 +362,41 @@ const updateTTStatus = (statusDiv, tienMat, chuyenKhoan, quetThe, hocPhi) => {
     }
 };
 
-const showModal = (message, title = "Thông báo") => {
+
+const genericConfirmModal = document.getElementById('generic-confirm-modal');
+const genericConfirmTitle = document.getElementById('generic-confirm-title');
+const genericConfirmMessage = document.getElementById('generic-confirm-message');
+const genericConfirmOk = document.getElementById('generic-confirm-ok');
+const genericConfirmCancel = document.getElementById('generic-confirm-cancel');
+
+const showCustomConfirm = (message, title = "Xác nhận") => {
+    return new Promise((resolve) => {
+        genericConfirmTitle.textContent = title;
+        genericConfirmMessage.textContent = message;
+        genericConfirmModal.classList.remove('hidden');
+        setTimeout(() => genericConfirmModal.classList.add('flex'), 10);
+
+        const handleOk = () => {
+            cleanup();
+            resolve(true);
+        };
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            genericConfirmModal.classList.remove('flex');
+            setTimeout(() => genericConfirmModal.classList.add('hidden'), 300);
+            genericConfirmOk.removeEventListener('click', handleOk);
+            genericConfirmCancel.removeEventListener('click', handleCancel);
+        };
+
+        genericConfirmOk.addEventListener('click', handleOk);
+        genericConfirmCancel.addEventListener('click', handleCancel);
+    });
+};
+\nconst showModal = (message, title = "Thông báo") => {
     modalTitle.textContent = title;
     modalMessage.textContent = message;
     customModal.classList.remove('hidden');
@@ -593,7 +627,7 @@ saveSettingsButton.addEventListener('click', async () => {
 
 releaseUpdateButton.addEventListener('click', async () => {
     // Chỉ admin mới có nút này nhờ class admin-only
-    const confirmRelease = confirm("Bạn có chắc chắn muốn phát hành bản cập nhật mới? Hành động này sẽ ép TẤT CẢ trình duyệt của nhân viên tải lại trang ngay lập tức.");
+    const confirmRelease = await showCustomConfirm("Bạn có chắc chắn muốn phát hành bản cập nhật mới? Hành động này sẽ ép TẤT CẢ trình duyệt của nhân viên tải lại trang ngay lập tức.");
     if (!confirmRelease) return;
 
     releaseUpdateButton.disabled = true;
@@ -994,7 +1028,7 @@ ghiDanhForm.addEventListener('submit', async (e) => {
     let ghiChu = "";
     
     if (age !== null && age < 6) {
-        if (!confirm("Học viên dưới 6 tuổi, Bạn có muốn đăng ký?")) {
+        if (!(await showCustomConfirm("Học viên dưới 6 tuổi, Bạn có muốn đăng ký?"))) {
             ghiDanhSubmitButton.disabled = false;
             ghiDanhSpinner.classList.add('hidden');
             return;
