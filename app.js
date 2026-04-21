@@ -41,6 +41,25 @@ const db = getFirestore(app);
 // --- BIẾN TOÀN CỤC ---
 let currentUser = null;
 
+const calculateAge = (ngaySinhStr) => {
+    if (!ngaySinhStr) return null;
+    const dob = new Date(ngaySinhStr);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+    return age;
+};
+
+const formatNgaySinhStr = (str) => {
+    if (!str) return '';
+    const parts = str.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return str;
+};
+
 const calculateNhomTuoi = (ngaySinhStr) => {
     if (!ngaySinhStr) return 'N/A';
     const dob = new Date(ngaySinhStr);
@@ -736,6 +755,8 @@ const renderHLVTable = () => {
         <tr class="hover:bg-gray-50 ${rowClass}">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.caDay}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHV_6_8}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHV_gt_8}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${hlv.loaiHLV === 'Tự động' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
                     ${hlv.loaiHLV}
@@ -971,6 +992,17 @@ ghiDanhForm.addEventListener('submit', async (e) => {
     const caHoc = caHocSelect.value;
     const ngaySinh = ngaySinhInput.value;
     const nhomTuoi = calculateNhomTuoi(ngaySinh);
+    const age = calculateAge(ngaySinh);
+    let ghiChu = "";
+    
+    if (age !== null && age < 6) {
+        if (!confirm("Học viên dưới 6 tuổi, Bạn có muốn đăng ký?")) {
+            ghiDanhSubmitButton.disabled = false;
+            ghiDanhSpinner.classList.add('hidden');
+            return;
+        }
+        ghiChu = "Học viên dưới 6 tuổi";
+    }
 
     if (!tenHV || !sdtHV || !goiHocId) {
         showModal("Vui lòng điền đầy đủ thông tin bắt buộc.", "Thiếu thông tin");
@@ -1022,7 +1054,7 @@ ghiDanhForm.addEventListener('submit', async (e) => {
         const hlvThucNhan = tongHoaHong - thue;
 
         const hocVienData = {
-            tenHV, sdtHV, ngaySinh, nhomTuoi, caHoc,
+            tenHV, sdtHV, ngaySinh, nhomTuoi, caHoc, ghiChu,
             hinhThucThanhToan,
             thanhToanChiTiet,
             maThe: maTheInput.value.trim(),
@@ -1186,6 +1218,7 @@ const updateQuickReport = (startDate = null, endDate = null) => {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.maThe || ''}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hv.tenHV}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.sdtHV}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${formatNgaySinhStr(hv.ngaySinh)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenHLV}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hv.tenGoiHoc}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(hv.hocPhi)}</td>
@@ -1805,12 +1838,14 @@ const renderHLVReport = (data, startDate, endDate) => {
         if (!reportByHLV[hlvId]) {
             const hlvObj = globalHLVList.find(h => h.id === hlvId);
             const caDay = hlvObj ? hlvObj.caDay : 'N/A';
-            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
+            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, soHV_6_8: 0, soHV_gt_8: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++;
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi;
         reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong; // CẬP NHẬT: Cộng dồn hoa hồng từ DB
         reportByHLV[hlvId].tongThue += hv.thue;
+        if (hv.nhomTuoi === '6-8') reportByHLV[hlvId].soHV_6_8++;
+        else if (hv.nhomTuoi === '>8') reportByHLV[hlvId].soHV_gt_8++;
         reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
 
@@ -1848,6 +1883,8 @@ const renderHLVReport = (data, startDate, endDate) => {
                     <tr>
                         <th scope="col" data-key="tenHLV" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tên HLV <span class="text-gray-400 ml-1">${getSortIcon('tenHLV')}</span></th>
                         <th scope="col" data-key="caDay" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Ca Dạy <span class="text-gray-400 ml-1">${getSortIcon('caDay')}</span></th>
+                        <th scope="col" data-key="soHV_6_8" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">6-8 tuổi <span class="text-gray-400 ml-1">${getSortIcon('soHV_6_8')}</span></th>
+                        <th scope="col" data-key="soHV_gt_8" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">> 8 tuổi <span class="text-gray-400 ml-1">${getSortIcon('soHV_gt_8')}</span></th>
                         <th scope="col" data-key="soHVMoi" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Số HV Mới <span class="text-gray-400 ml-1">${getSortIcon('soHVMoi')}</span></th>
                         <th scope="col" data-key="tongDoanhThu" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tổng Doanh Thu <span class="text-gray-400 ml-1">${getSortIcon('tongDoanhThu')}</span></th>
                         <th scope="col" data-key="tongHoaHong" class="hlv-sort-th cursor-pointer hover:bg-gray-200 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none">Tổng Hoa Hồng (Gross) <span class="text-gray-400 ml-1">${getSortIcon('tongHoaHong')}</span></th>
@@ -1857,7 +1894,7 @@ const renderHLVReport = (data, startDate, endDate) => {
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     ${reportArray.length === 0 
-                        ? `<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu.</td></tr>`
+                        ? `<tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Không có dữ liệu.</td></tr>`
                         : reportArray.map(hlv => `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
@@ -1985,12 +2022,14 @@ const generateHLVReportPrintHTML = (data) => {
         if (!reportByHLV[hlvId]) {
             const hlvObj = globalHLVList.find(h => h.id === hlvId);
             const caDay = hlvObj ? hlvObj.caDay : 'N/A';
-            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
+            reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, soHV_6_8: 0, soHV_gt_8: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 };
         }
         reportByHLV[hlvId].soHVMoi++; 
         reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
         reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong; // CẬP NHẬT
-        reportByHLV[hlvId].tongThue += hv.thue; 
+        reportByHLV[hlvId].tongThue += hv.thue;
+        if (hv.nhomTuoi === '6-8') reportByHLV[hlvId].soHV_6_8++;
+        else if (hv.nhomTuoi === '>8') reportByHLV[hlvId].soHV_gt_8++; 
         reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
     });
     const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
@@ -2001,6 +2040,8 @@ const generateHLVReportPrintHTML = (data) => {
                 <tr>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tên HLV</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Ca Dạy</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">6-8 tuổi</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">> 8 tuổi</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Số HV</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tổng Doanh Thu</th>
                     <th style="border: 1px solid #ddd; padding: 8px;">Tổng Hoa Hồng</th> <th style="border: 1px solid #ddd; padding: 8px;">Thuế</th>
@@ -2012,6 +2053,8 @@ const generateHLVReportPrintHTML = (data) => {
                     <tr>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.tenHLV}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.caDay}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHV_6_8}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHV_gt_8}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${hlv.soHVMoi}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongDoanhThu)}</td>
                         <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongHoaHong)}</td> <td style="border: 1px solid #ddd; padding: 8px;">${formatCurrency(hlv.tongThue)}</td>
@@ -2158,26 +2201,28 @@ const handleExportExcel = () => {
                 if (!reportByHLV[hlvId]) { 
                     const hlvObj = globalHLVList.find(h => h.id === hlvId);
                     const caDay = hlvObj ? hlvObj.caDay : 'N/A';
-                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 }; 
+                    reportByHLV[hlvId] = { tenHLV: hv.tenHLV, caDay: caDay, soHVMoi: 0, soHV_6_8: 0, soHV_gt_8: 0, tongDoanhThu: 0, tongHoaHong: 0, tongThue: 0, tongThucNhan: 0 }; 
                 }
                 reportByHLV[hlvId].soHVMoi++; 
                 reportByHLV[hlvId].tongDoanhThu += hv.hocPhi; 
                 reportByHLV[hlvId].tongHoaHong += hv.tongHoaHong;
-                reportByHLV[hlvId].tongThue += hv.thue; 
+                reportByHLV[hlvId].tongThue += hv.thue;
+        if (hv.nhomTuoi === '6-8') reportByHLV[hlvId].soHV_6_8++;
+        else if (hv.nhomTuoi === '>8') reportByHLV[hlvId].soHV_gt_8++; 
                 reportByHLV[hlvId].tongThucNhan += hv.hlvThucNhan;
             });
             const reportArray = Object.values(reportByHLV).sort((a, b) => b.tongThucNhan - a.tongThucNhan);
             
             dataForSheet = [
                 ["BÁO CÁO THU NHẬP HLV"], [`Từ ngày: ${formatDateForDisplay(startDate)}`, `Đến ngày: ${formatDateForDisplay(endDate)}`], [],
-                ["Tên HLV", "Ca Dạy", "Số HV Mới", "Tổng Doanh Thu", "Tổng Hoa Hồng (Gross)", "Thuế Phải Nộp", "Thực Nhận (Net)"]
+                ["Tên HLV", "Ca Dạy", "6-8 tuổi", "> 8 tuổi", "Số HV Mới", "Tổng Doanh Thu", "Tổng Hoa Hồng (Gross)", "Thuế Phải Nộp", "Thực Nhận (Net)"]
             ];
             reportArray.forEach(hlv => {
-                dataForSheet.push([hlv.tenHLV, hlv.caDay, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
+                dataForSheet.push([hlv.tenHLV, hlv.caDay, hlv.soHV_6_8, hlv.soHV_gt_8, hlv.soHVMoi, hlv.tongDoanhThu, hlv.tongHoaHong, hlv.tongThue, hlv.tongThucNhan]);
             });
             
             // Cấu hình độ rộng cột cho HLV
-            colWidths = [ { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
+            colWidths = [ { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 20 }, { wch: 25 } ];
         
         } else if (currentReportType === 'doanhthu_chitiet') {
             sheetName = `DoanhThuChiTiet_${dateRangeStr}`;
