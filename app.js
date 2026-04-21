@@ -755,8 +755,6 @@ const renderHLVTable = () => {
         <tr class="hover:bg-gray-50 ${rowClass}">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hlv.tenHLV}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.caDay}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHV_6_8}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${hlv.soHV_gt_8}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                 <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${hlv.loaiHLV === 'Tự động' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
                     ${hlv.loaiHLV}
