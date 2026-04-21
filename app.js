@@ -129,6 +129,7 @@ const goiHocCancelButton = document.getElementById('goi-hoc-cancel-button');
 
 // Elements cho Tab HLV (Step 2c)
 const hlvTableBody = document.getElementById('hlv-table-body');
+const hlvExcelBtn = document.getElementById('hlv-excel-btn');
 const addHLVButton = document.getElementById('add-hlv-button');
 const hlvModal = document.getElementById('hlv-modal');
 const hlvModalTitle = document.getElementById('hlv-modal-title');
@@ -2419,6 +2420,45 @@ importStartBtn.addEventListener('click', handleImportStart);
 if (hvListPrintBtn) hvListPrintBtn.addEventListener('click', handlePrintStudentList);
 if (hvListExcelBtn) hvListExcelBtn.addEventListener('click', handleExportStudentList);
 
+// --- XUẤT EXCEL DỮ LIỆU HLV ---
+const handleExportHLVList = () => {
+    try {
+        if (!globalHLVList || globalHLVList.length === 0) {
+            showModal('Không có dữ liệu HLV để xuất.', 'Thông báo');
+            return;
+        }
+        // Sắp xếp theo thứ tự ưu tiên
+        const sortedList = [...globalHLVList].sort((a, b) => (a.thuTuUuTien || 99) - (b.thuTuUuTien || 99));
+        const dataToExport = sortedList.map((hlv, index) => ({
+            'STT': index + 1,
+            'Tên HLV': hlv.tenHLV,
+            'Ca Dạy': hlv.caDay,
+            'Loại HLV': hlv.loaiHLV,
+            'Thứ tự Ưu tiên': hlv.thuTuUuTien || 99,
+            'Số HV đang dạy': hlv.soHVHienTai || 0,
+            'Trạng thái': hlv.active ? 'Đang làm' : 'Đã nghỉ'
+        }));
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        // Định dạng độ rộng cột
+        ws['!cols'] = [
+            { wch: 5 },   // STT
+            { wch: 25 },  // Tên HLV
+            { wch: 15 },  // Ca Dạy
+            { wch: 20 },  // Loại HLV
+            { wch: 15 },  // Thứ tự Ưu tiên
+            { wch: 20 },  // Số HV đang dạy
+            { wch: 15 }   // Trạng thái
+        ];
+        XLSX.utils.book_append_sheet(wb, ws, 'DanhSachHLV');
+        XLSX.writeFile(wb, `DanhSachHLV_${formatDateForInput(new Date())}.xlsx`);
+    } catch (error) {
+        console.error('Lỗi xuất Excel HLV:', error);
+        showModal(`Lỗi xuất Excel: ${error.message}`, 'Lỗi');
+    }
+};
+if (hlvExcelBtn) hlvExcelBtn.addEventListener('click', handleExportHLVList);
+
 // --- NGHIỆP VỤ BƯỚC 1: XÁC THỰC & PHÂN QUYỀN ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -2462,4 +2502,113 @@ onAuthStateChanged(auth, async (user) => {
     globalLoader.classList.add('hidden');
 });
 
+// --- LỌC THEO CỘT TRONG CÁC BẢNG ---
+function applyTableFilters(tableBody) {
+    if (!tableBody) return;
+    const table = tableBody.closest('table');
+    if (!table) return;
+    
+    const thead = table.querySelector('thead');
+    const inputs = thead.querySelectorAll('.col-filter-input');
+    
+    const filters = [];
+    inputs.forEach(input => {
+        const val = input.value.trim().toLowerCase();
+        if (val) {
+            filters.push({
+                index: parseInt(input.dataset.colindex),
+                value: val
+            });
+        }
+    });
 
+    const rows = tableBody.querySelectorAll('tr');
+    rows.forEach(row => {
+        // Skip empty state row (1 cell with colspan)
+        if (row.cells.length === 1 && row.cells[0].hasAttribute('colspan')) {
+            row.style.display = '';
+            return;
+        }
+        
+        let match = true;
+        for (const f of filters) {
+            const cell = row.cells[f.index];
+            if (!cell) {
+                match = false;
+                break;
+            }
+            const text = cell.textContent.trim().toLowerCase();
+            if (!text.includes(f.value)) {
+                match = false;
+                break;
+            }
+        }
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function initTableColumnFilters() {
+    const tables = document.querySelectorAll('table');
+    tables.forEach(table => {
+        const thead = table.querySelector('thead');
+        if (!thead) return;
+        const headerRows = thead.querySelectorAll('tr');
+        if (headerRows.length === 0) return;
+        
+        const headerCells = headerRows[headerRows.length - 1].querySelectorAll('th');
+        headerCells.forEach((th, index) => {
+            const text = th.textContent.trim();
+            // Skip "STT" and "Hành động"
+            if (text === 'STT' || text === 'Hành động' || th.querySelector('.sr-only')) {
+                return;
+            }
+            
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'mt-2';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Lọc...';
+            input.className = 'col-filter-input block w-full px-2 py-1 text-xs border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 font-normal text-gray-700 bg-white';
+            input.dataset.colindex = index;
+            
+            input.addEventListener('input', () => {
+                const tbody = table.querySelector('tbody');
+                if (tbody) applyTableFilters(tbody);
+            });
+            
+            inputContainer.appendChild(input);
+            th.appendChild(inputContainer);
+        });
+
+        // Setup MutationObserver to auto-apply filters when tbody changes (e.g. re-rendered by Firebase)
+        const tbody = table.querySelector('tbody');
+        if (tbody) {
+            const observer = new MutationObserver(() => {
+                applyTableFilters(tbody);
+            });
+            observer.observe(tbody, { childList: true });
+        }
+    });
+}
+
+// Ensure initTableColumnFilters is called
+initTableColumnFilters();
+
+// --- NÚT LÊN ĐẦU TRANG ---
+const backToTopBtn = document.getElementById('back-to-top');
+if (backToTopBtn) {
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTopBtn.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            backToTopBtn.classList.add('translate-y-0', 'opacity-100');
+        } else {
+            backToTopBtn.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            backToTopBtn.classList.remove('translate-y-0', 'opacity-100');
+        }
+    });
+
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
