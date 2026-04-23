@@ -1687,15 +1687,20 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         if (!newHlv) throw new Error("HLV được chọn không hợp lệ.");
         const newHlvTen = newHlv.tenHLV;
         
+        const hocVienCu = globalHocVienList.find(h => h.id === id);
+        
+        // Tính lại hoa hồng, thuế
+        const rateHBA = globalRateHBA / 100;
+        const rateTax = globalRateTax / 100;
+        const hbaNhan = hocPhi * rateHBA;
+        const tongHoaHong = hocPhi - hbaNhan;
+        const thue = tongHoaHong * rateTax;
+        const hlvThucNhan = tongHoaHong - thue;
+
         const dataToUpdate = {
             tenHV: hocVienEditTenInput.value.trim(),
             sdtHV: hocVienEditSdtInput.value.trim(),
             ngaySinh: hocVienEditNgaySinhInput.value,
-            nhomTuoi: hocVienEditNgaySinhInput.value ? calculateNhomTuoi(hocVienEditNgaySinhInput.value) : (globalHocVienList.find(h => h.id === editId)?.nhomTuoi || 'N/A'),
-            maThe: hocVienEditMaTheInput.value.trim(),
-            soPhieuThu: hocVienEditPhieuThuInput.value.trim(),
-            hinhThucThanhToan,
-            thanhToanChiTiet,
             ngayGhiDanh: Timestamp.fromDate(ngayGhiDanhMoi),
             ngayHetHan: Timestamp.fromDate(ngayHetHanMoi),
             hlvId: newHlvId,   
@@ -1703,6 +1708,24 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         };
 
         await updateDoc(doc(db, "hocvien", id), dataToUpdate);
+
+        // --- GHI LOG HOẠT ĐỘNG ---
+        if (currentUser) {
+            try {
+                await addDoc(collection(db, "activity_logs"), {
+                    action: 'EDIT_STUDENT',
+                    description: `Đã sửa thông tin học viên: ${dataToUpdate.tenHV}`,
+                    studentId: id,
+                    studentName: dataToUpdate.tenHV,
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    timestamp: Timestamp.now()
+                });
+            } catch (logError) {
+                console.error("Lỗi khi ghi log hoạt động:", logError);
+            }
+        }
+        // -------------------------
         closeHocVienEditModal();
         showModal("Cập nhật thông tin học viên thành công!", "Thành công");
     } catch (error) {
