@@ -20,7 +20,9 @@ import {
     where,
     getDocs,
     Timestamp,
-    writeBatch
+    writeBatch,
+    orderBy,
+    limit
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- CẤU HÌNH FIREBASE ---
@@ -2798,5 +2800,104 @@ if (backToTopBtn) {
 
     backToTopBtn.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+// --- LỊCH SỬ THAO TÁC (ACTIVITY LOGS) ---
+const logDateFromInput = document.getElementById('log-date-from');
+const logDateToInput = document.getElementById('log-date-to');
+const loadLogsBtn = document.getElementById('load-logs-btn');
+const loadLogsSpinner = document.getElementById('load-logs-spinner');
+const logsTableBody = document.getElementById('logs-table-body');
+
+// Set default dates: from = today, to = today
+if (logDateFromInput) {
+    logDateFromInput.value = formatDateForInput(new Date());
+}
+if (logDateToInput) {
+    logDateToInput.value = formatDateForInput(new Date());
+}
+
+if (loadLogsBtn) {
+    loadLogsBtn.addEventListener('click', async () => {
+        // Chỉ Admin mới được dùng
+        if (currentUserRole !== 'admin') {
+            showModal('Bạn không có quyền xem lịch sử thao tác.', 'Lỗi');
+            return;
+        }
+
+        const fromVal = logDateFromInput.value;
+        const toVal = logDateToInput.value;
+
+        if (!fromVal || !toVal) {
+            showModal('Vui lòng chọn cả Từ ngày và Đến ngày.', 'Lỗi');
+            return;
+        }
+
+        const fromDate = new Date(fromVal);
+        const toDate = new Date(toVal);
+        toDate.setHours(23, 59, 59, 999);
+
+        // Kiểm tra khoảng cách tối đa 45 ngày
+        const diffMs = toDate.getTime() - fromDate.getTime();
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+        if (diffDays < 0) {
+            showModal('Ngày bắt đầu phải trước ngày kết thúc.', 'Lỗi');
+            return;
+        }
+
+        if (diffDays > 45) {
+            showModal('Khoảng thời gian tối đa là 45 ngày. Vui lòng chọn khoảng thời gian ngắn hơn.', 'Lỗi');
+            return;
+        }
+
+        // Show spinner
+        loadLogsBtn.disabled = true;
+        if (loadLogsSpinner) loadLogsSpinner.classList.remove('hidden');
+        logsTableBody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-500 text-sm">Đang tải...</td></tr>';
+
+        try {
+            const fromTimestamp = Timestamp.fromDate(fromDate);
+            const toTimestamp = Timestamp.fromDate(toDate);
+
+            const q = query(
+                collection(db, "activity_logs"),
+                where('timestamp', '>=', fromTimestamp),
+                where('timestamp', '<=', toTimestamp),
+                orderBy('timestamp', 'desc'),
+                limit(100)
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                logsTableBody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-500 text-sm">Không có log nào trong khoảng thời gian này.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const time = data.timestamp ? formatDateTimeForDisplay(data.timestamp) : 'N/A';
+                const user = data.userEmail || 'N/A';
+                const desc = data.description || 'N/A';
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">${time}</td>
+                        <td class="px-4 py-3 text-sm text-gray-800 font-medium">${user}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">${desc}</td>
+                    </tr>
+                `;
+            });
+            logsTableBody.innerHTML = html;
+
+        } catch (error) {
+            console.error('Lỗi tải log:', error);
+            logsTableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-4 text-center text-red-500 text-sm">Lỗi: ${error.message}</td></tr>`;
+        } finally {
+            loadLogsBtn.disabled = false;
+            if (loadLogsSpinner) loadLogsSpinner.classList.add('hidden');
+        }
     });
 }
