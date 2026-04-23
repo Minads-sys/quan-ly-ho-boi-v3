@@ -6,7 +6,7 @@
     <title>Quản lý Hồ bơi HBA V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="app.css?v=20260423114812">
+    <link rel="stylesheet" href="app.css?v=20260423115649">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -504,7 +504,7 @@
                 <div id="content-cai-dat" class="tab-panel">
                     <h2 class="text-2xl font-semibold mb-6">Cài Đặt Hệ Thống</h2>
                     
-                    <!-- HÀNG TRÊN: Cài đặt + Nút phát hành -->
+                    <!-- HÀNG 1: Cài đặt + Nút phát hành -->
                     <div class="flex flex-col sm:flex-row justify-between items-end mb-12">
                         <div class="flex flex-col sm:flex-row gap-4 items-end">
                             <div class="w-full sm:w-40">
@@ -526,42 +526,43 @@
                         </button>
                     </div>
 
-                    <!-- HÀNG DƯỚI: Lịch sử thao tác -->
-                    <div class="admin-only">
-                        <div class="flex flex-col sm:flex-row items-end gap-8 mb-6">
-                            <h3 class="text-gray-800 font-bold text-2xl flex items-center gap-2 pb-1">
-                                <span>📋</span> Lịch sử thao tác
-                            </h3>
-                            <div class="flex flex-col sm:flex-row gap-4 items-end">
-                                <div>
-                                    <label for="log-date-from" class="block text-sm font-medium text-gray-700">Từ ngày</label>
-                                    <input type="date" id="log-date-from" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <label for="log-date-to" class="block text-sm font-medium text-gray-700">Đến ngày</label>
-                                    <input type="date" id="log-date-to" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                                <button id="load-logs-btn" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-md hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
-                                    <span id="load-logs-spinner" class="loader-sm hidden"></span>
-                                    Tải Log
-                                </button>
-                            </div>
+                    <!-- HÀNG 2: Tiêu đề Lịch sử thao tác -->
+                    <div class="admin-only mb-6 mt-12">
+                        <h3 class="text-gray-800 font-bold text-3xl flex items-center gap-3">
+                            <span>📋</span> Lịch sử thao tác
+                        </h3>
+                    </div>
+
+                    <!-- HÀNG 3: Bộ lọc Từ ngày / Đến ngày -->
+                    <div class="admin-only flex flex-col sm:flex-row gap-4 items-end mb-6 ml-10">
+                        <div class="w-48">
+                            <label for="log-date-from" class="block text-sm font-medium text-gray-700">Từ ngày</label>
+                            <input type="date" id="log-date-from" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
-                        
-                        <div class="overflow-x-auto rounded-lg border border-gray-200 max-h-96 overflow-y-auto shadow-sm">
-                            <table class="min-w-full divide-y divide-gray-200 bg-white">
-                                <thead class="bg-gray-50 sticky top-0 z-10">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Thời gian</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Người thao tác</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mô tả chi tiết</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="logs-table-body" class="divide-y divide-gray-200">
-                                    <tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">Vui lòng chọn thời gian và bấm Tải Log</td></tr>
-                                </tbody>
-                            </table>
+                        <div class="w-48">
+                            <label for="log-date-to" class="block text-sm font-medium text-gray-700">Đến ngày</label>
+                            <input type="date" id="log-date-to" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
+                        <button id="load-logs-btn" class="bg-indigo-600 text-white font-bold py-2 px-8 rounded-md hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap">
+                            <span id="load-logs-spinner" class="loader-sm hidden"></span>
+                            Tải Log
+                        </button>
+                    </div>
+                    
+                    <!-- HÀNG 4: Bảng Log -->
+                    <div class="admin-only overflow-x-auto rounded-lg border border-gray-200 max-h-96 overflow-y-auto shadow-sm ml-10">
+                        <table class="min-w-full divide-y divide-gray-200 bg-white">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">THỜI GIAN</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">NGƯỜI THAO TÁC</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">MÔ TẢ CHI TIẾT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-table-body" class="divide-y divide-gray-200">
+                                <tr><td colspan="3" class="px-6 py-8 text-center text-gray-500">Vui lòng chọn thời gian và bấm Tải Log</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -825,10 +826,11 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
     </button>
 
-    <script type="module" src="app.js?v=20260423114812"></script>
+    <script type="module" src="app.js?v=20260423115649"></script>
     
 </body>
 </html>
+
 
 
 
