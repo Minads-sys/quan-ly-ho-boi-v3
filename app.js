@@ -1701,10 +1701,20 @@ hocVienEditForm.addEventListener('submit', async (e) => {
             tenHV: hocVienEditTenInput.value.trim(),
             sdtHV: hocVienEditSdtInput.value.trim(),
             ngaySinh: hocVienEditNgaySinhInput.value,
+            nhomTuoi: hocVienEditNgaySinhInput.value ? calculateNhomTuoi(hocVienEditNgaySinhInput.value) : (hocVienCu?.nhomTuoi || 'N/A'),
+            maThe: hocVienEditMaTheInput.value.trim(),
+            soPhieuThu: hocVienEditPhieuThuInput.value.trim(),
+            hinhThucThanhToan,
+            thanhToanChiTiet,
             ngayGhiDanh: Timestamp.fromDate(ngayGhiDanhMoi),
             ngayHetHan: Timestamp.fromDate(ngayHetHanMoi),
             hlvId: newHlvId,   
-            tenHLV: newHlvTen  
+            tenHLV: newHlvTen,
+            hocPhi: hocPhi,
+            hbaNhan: hbaNhan,
+            tongHoaHong: tongHoaHong,
+            thue: thue,
+            hlvThucNhan: hlvThucNhan
         };
 
         await updateDoc(doc(db, "hocvien", id), dataToUpdate);
@@ -1712,9 +1722,19 @@ hocVienEditForm.addEventListener('submit', async (e) => {
         // --- GHI LOG HOẠT ĐỘNG ---
         if (currentUser) {
             try {
+                let logDesc = `Đã sửa thông tin học viên: ${dataToUpdate.tenHV}.`;
+                if (hocVienCu) {
+                    if (hocVienCu.hlvId !== newHlvId) {
+                        logDesc += ` Đổi HLV: ${hocVienCu.tenHLV || 'N/A'} -> ${newHlvTen}.`;
+                    }
+                    if (hocVienCu.hocPhi !== hocPhi) {
+                        logDesc += ` Đổi Giá: ${formatCurrency(hocVienCu.hocPhi || 0)} -> ${formatCurrency(hocPhi)}.`;
+                    }
+                }
+                
                 await addDoc(collection(db, "activity_logs"), {
                     action: 'EDIT_STUDENT',
-                    description: `Đã sửa thông tin học viên: ${dataToUpdate.tenHV}`,
+                    description: logDesc,
                     studentId: id,
                     studentName: dataToUpdate.tenHV,
                     userId: currentUser.uid,
