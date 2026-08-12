@@ -1201,9 +1201,11 @@ const printReceipt = (hv) => {
     printSection.innerHTML = printContent;
     printSection.classList.remove('hidden');
     document.body.classList.add('printing');
-    window.print();
-    document.body.classList.remove('printing');
-    printSection.classList.add('hidden');
+    setTimeout(() => {
+        window.print();
+        document.body.classList.remove('printing');
+        printSection.classList.add('hidden');
+    }, 250);
 };
 
 // Cập nhật hàm cũ để dùng hàm chung
@@ -1379,9 +1381,11 @@ const handlePrintQuickReport = () => {
     printSection.innerHTML = printContent;
     printSection.classList.remove('hidden');
     document.body.classList.add('printing');
-    window.print();
-    document.body.classList.remove('printing');
-    printSection.classList.add('hidden');
+    setTimeout(() => {
+        window.print();
+        document.body.classList.remove('printing');
+        printSection.classList.add('hidden');
+    }, 250);
 };
 if(qrPrintBtn) qrPrintBtn.addEventListener('click', handlePrintQuickReport);
 
@@ -2241,9 +2245,11 @@ const handlePrintReport = () => {
     
     printSection.classList.remove('hidden');
     document.body.classList.add('printing');
-    window.print();
-    document.body.classList.remove('printing');
-    printSection.classList.add('hidden');
+    setTimeout(() => {
+        window.print();
+        document.body.classList.remove('printing');
+        printSection.classList.add('hidden');
+    }, 250);
 };
 reportPrintBtn.addEventListener('click', handlePrintReport);
 
@@ -2552,9 +2558,11 @@ const handlePrintStudentList = () => {
     printSection.innerHTML = printContent;
     printSection.classList.remove('hidden');
     document.body.classList.add('printing');
-    window.print();
-    document.body.classList.remove('printing');
-    printSection.classList.add('hidden');
+    setTimeout(() => {
+        window.print();
+        document.body.classList.remove('printing');
+        printSection.classList.add('hidden');
+    }, 250);
 };
 
 // 2. Hàm Xử lý Xuất Excel Danh sách Học viên
@@ -2677,7 +2685,7 @@ onAuthStateChanged(auth, async (user) => {
 
         } catch (error) {
             console.error("Lỗi role:", error);
-            showModal(`Lỗi phân quyền: ${error.message}`, "Lỗi");
+            showModal(`Lỗi tải dữ liệu tài khoản: ${error.message}`, "Lỗi");
             currentUserRole = null;
             setupUIForRole(null); 
         }

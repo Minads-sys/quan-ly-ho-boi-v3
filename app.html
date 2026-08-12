@@ -6,7 +6,7 @@
     <title>Quản lý Hồ bơi HBA V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="app.css?v=20260811125009">
+    <link rel="stylesheet" href="app.css?v=20260812082051">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -802,7 +802,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 pb-2 border-t border-b border-gray-200">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 pb-2 border-t border-gray-200">
                     <div>
                         <label for="hocvien-edit-ngayghi" class="block text-sm font-medium text-gray-700">Ngày Ghi Danh (Có thể sửa)</label>
                         <input type="date" id="hocvien-edit-ngayghi" required class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
@@ -812,14 +812,14 @@
                         <label for="hocvien-edit-ngayhet" class="block text-sm font-medium text-gray-700">Ngày Hết Hạn (Tự động)</label>
                         <input type="date" id="hocvien-edit-ngayhet" readonly class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-gray-100 cursor-not-allowed">
                     </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                        <div>
-                            <label for="hocvien-edit-sobuoidahoc" class="block text-sm font-medium text-gray-700">Số Buổi Đã Học (Sửa nếu cần)</label>
-                            <input type="number" id="hocvien-edit-sobuoidahoc" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                        </div>
-                        <div>
-                        </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2 border-b border-gray-200">
+                    <div class="admin-only">
+                        <label for="hocvien-edit-sobuoidahoc" class="block text-sm font-medium text-gray-700">Số Buổi Đã Học (Chỉ Admin sửa)</label>
+                        <input type="number" id="hocvien-edit-sobuoidahoc" class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                    </div>
+                    <div></div>
                 </div>
                 
                 <div class="flex justify-end gap-4 pt-4">
@@ -873,10 +873,11 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script type="module" src="app.js?v=20260811125009"></script>
+    <script type="module" src="app.js?v=20260812082051"></script>
     
 </body>
 </html>
+
 
 
 
