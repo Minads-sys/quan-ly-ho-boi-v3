@@ -322,9 +322,36 @@ const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN').format(value || 0);
 };
 
+// Hàm chuyển đổi ngày linh hoạt và an toàn (Date, Timestamp, String YYYY-MM-DD, ISO, Timestamp ms)
+const safeParseDate = (date) => {
+    if (!date) return null;
+    if (date instanceof Date) return isNaN(date.getTime()) ? null : date;
+    if (typeof date.toDate === 'function') {
+        try {
+            const d = date.toDate();
+            return (d instanceof Date && !isNaN(d.getTime())) ? d : null;
+        } catch (e) {
+            return null;
+        }
+    }
+    if (typeof date === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            const [y, m, day] = date.split('-').map(Number);
+            return new Date(y, m - 1, day);
+        }
+        const parsed = new Date(date);
+        return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof date === 'number') {
+        const parsed = new Date(date);
+        return isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+};
+
 const formatDateForInput = (date) => {
-    if (!date) return '';
-    const d = (date instanceof Date) ? date : date.toDate();
+    const d = safeParseDate(date);
+    if (!d) return '';
     const year = d.getFullYear();
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const day = d.getDate().toString().padStart(2, '0');
@@ -332,8 +359,8 @@ const formatDateForInput = (date) => {
 };
 
 const formatDateForDisplay = (date) => {
-    if (!date) return 'N/A';
-    const d = (date instanceof Date) ? date : date.toDate();
+    const d = safeParseDate(date);
+    if (!d) return (typeof date === 'string' && date) ? date : 'N/A';
     const year = d.getFullYear();
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const day = d.getDate().toString().padStart(2, '0');
@@ -341,8 +368,8 @@ const formatDateForDisplay = (date) => {
 };
 
 const formatDateTimeForDisplay = (date) => {
-    if (!date) return 'N/A';
-    const d = (date instanceof Date) ? date : date.toDate();
+    const d = safeParseDate(date);
+    if (!d) return (typeof date === 'string' && date) ? date : 'N/A';
     const time = d.toLocaleTimeString('vi-VN');
     return `${formatDateForDisplay(d)} ${time}`;
 };
@@ -3483,8 +3510,8 @@ function calculateAndRenderKQKD() {
 
         // Lọc học viên trong tháng
         filteredStudents = globalHocVienList.filter(hv => {
-            if (!hv.ngayGhiDanh) return false;
-            const d = hv.ngayGhiDanh.toDate();
+            const d = safeParseDate(hv.ngayGhiDanh);
+            if (!d) return false;
             return d >= startDate && d <= endDate;
         });
 
@@ -3503,37 +3530,21 @@ function calculateAndRenderKQKD() {
 
         // Lọc học viên trong khoảng ngày
         filteredStudents = globalHocVienList.filter(hv => {
-            if (!hv.ngayGhiDanh) return false;
-            const d = hv.ngayGhiDanh.toDate();
+            const d = safeParseDate(hv.ngayGhiDanh);
+            if (!d) return false;
             return d >= startDate && d <= endDate;
         });
 
         // Lọc chi phí trong khoảng ngày
         filteredExpenses = globalChiPhiList.filter(cp => {
-            if (cp.ngayChi) {
-                const d = (cp.ngayChi instanceof Timestamp) ? cp.ngayChi.toDate() : new Date(cp.ngayChi);
-                return d >= startDate && d <= endDate;
-            }
-            if (cp.thangNam) {
-                const [y, m] = cp.thangNam.split('-');
-                const cpDate = new Date(parseInt(y), parseInt(m) - 1, 15);
-                return cpDate >= startDate && cpDate <= endDate;
-            }
-            return false;
+            const d = getExpenseDate(cp);
+            return d >= startDate && d <= endDate;
         });
 
         // Lọc thu khác trong khoảng ngày
         filteredThuKhac = globalThuKhacList.filter(t => {
-            if (t.ngayThu) {
-                const d = (t.ngayThu instanceof Timestamp) ? t.ngayThu.toDate() : new Date(t.ngayThu);
-                return d >= startDate && d <= endDate;
-            }
-            if (t.thangNam) {
-                const [y, m] = t.thangNam.split('-');
-                const tDate = new Date(parseInt(y), parseInt(m) - 1, 15);
-                return tDate >= startDate && tDate <= endDate;
-            }
-            return false;
+            const d = getIncomeDate(t);
+            return d >= startDate && d <= endDate;
         });
 
     } else { // 'all' - Toàn bộ thời gian
@@ -3826,7 +3837,7 @@ const renderExpenseTable = (expenses) => {
     expenses.forEach((cp) => {
         const isActive = cp.isTinhKQKD !== false;
         const grp = EXPENSE_GROUPS[cp.nhomChiPhi] || EXPENSE_GROUPS.chi_phi_khac;
-        const ngayChiStr = cp.ngayChi ? formatDateForDisplay(cp.ngayChi) : (cp.thangNam || 'N/A');
+        const ngayChiStr = getExpenseDateDisplay(cp);
 
         html += `
             <tr class="hover:bg-gray-50 transition-colors ${!isActive ? 'opacity-50 bg-gray-50' : ''}">
@@ -3891,7 +3902,7 @@ const renderThuKhacTable = (thuKhacList) => {
     let html = '';
     thuKhacList.forEach((tk) => {
         const isActive = tk.isTinhKQKD !== false;
-        const ngayThuStr = tk.ngayThu ? formatDateForDisplay(tk.ngayThu) : (tk.thangNam || 'N/A');
+        const ngayThuStr = getIncomeDateDisplay(tk);
 
         html += `
             <tr class="hover:bg-gray-50 transition-colors ${!isActive ? 'opacity-50 bg-gray-50' : ''}">
