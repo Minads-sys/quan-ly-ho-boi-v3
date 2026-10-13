@@ -92,6 +92,42 @@ let unsubHocVien = null;
 let unsubChiPhi = null;
 let unsubDinhPhiMau = null;
 
+// Biến toàn cục cho KQKD
+let globalChiPhiList = [];
+let globalDinhPhiMauList = [];
+let currentKqkdPeriodMode = 'month';
+let currentKqkdMonth = '';
+let currentKqkdStartDate = null;
+let currentKqkdEndDate = null;
+let currentKqkdSummaryData = null;
+let currentEditingExpenseId = null;
+
+// Nhóm chi phí chuẩn
+const EXPENSE_GROUPS = {
+    mat_bang: { label: 'Mặt Bằng / Thuê Hồ', badgeClass: 'bg-blue-100 text-blue-800' },
+    nhan_su: { label: 'Nhân Sự Quản Lý & An Toàn', badgeClass: 'bg-green-100 text-green-800' },
+    van_hanh: { label: 'Tiện Ích (Điện, Nước, Net)', badgeClass: 'bg-yellow-100 text-yellow-800' },
+    hoa_chat: { label: 'Hóa Chất & Bảo Trì Hồ', badgeClass: 'bg-purple-100 text-purple-800' },
+    marketing: { label: 'Marketing & Dụng Cụ', badgeClass: 'bg-pink-100 text-pink-800' },
+    chi_phi_khac: { label: 'Chi Phí Khác (Tùy Biến)', badgeClass: 'bg-gray-100 text-gray-800' }
+};
+
+// 12 Chi phí tối thiểu gợi ý cho Hồ bơi Q6
+const DEFAULT_DINH_PHI_MAU = [
+    { id: 'mau_1', tenChiPhi: 'Tiền thuê mặt bằng hồ bơi / làn bơi Q6', nhomChiPhi: 'mat_bang', soTienMacDinh: 15000000, ghiChu: 'Hợp đồng thuê định kỳ TTTDTT', isTinhKQKD: true, thuTu: 1 },
+    { id: 'mau_2', tenChiPhi: 'Lương nhân viên lễ tân & ghi danh', nhomChiPhi: 'nhan_su', soTienMacDinh: 6000000, ghiChu: 'Lương ca trực quầy tiếp đón', isTinhKQKD: true, thuTu: 2 },
+    { id: 'mau_3', tenChiPhi: 'Lương nhân viên cứu hộ (Lifeguard)', nhomChiPhi: 'nhan_su', soTienMacDinh: 6000000, ghiChu: 'Trực an toàn bể bơi', isTinhKQKD: true, thuTu: 3 },
+    { id: 'mau_4', tenChiPhi: 'Lương nhân viên vệ sinh sàn & tạp vụ', nhomChiPhi: 'nhan_su', soTienMacDinh: 3000000, ghiChu: 'Vệ sinh phòng tắm tráng, WC', isTinhKQKD: true, thuTu: 4 },
+    { id: 'mau_5', tenChiPhi: 'Tiền điện (Bơm lọc cát tuần hoàn & chiếu sáng)', nhomChiPhi: 'van_hanh', soTienMacDinh: 4000000, ghiChu: 'Điện kinh doanh 3 pha', isTinhKQKD: true, thuTu: 5 },
+    { id: 'mau_6', tenChiPhi: 'Tiền nước sạch cấp hồ & tráng xả', nhomChiPhi: 'van_hanh', soTienMacDinh: 2500000, ghiChu: 'Bổ sung hao hụt & vòi tắm tráng', isTinhKQKD: true, thuTu: 6 },
+    { id: 'mau_7', tenChiPhi: 'Hóa chất Clo, PAC, pH xử lý nước hồ', nhomChiPhi: 'hoa_chat', soTienMacDinh: 2000000, ghiChu: 'Khử trùng nước đạt chuẩn y tế', isTinhKQKD: true, thuTu: 7 },
+    { id: 'mau_8', tenChiPhi: 'Bảo trì máy bơm, robot hút cặn đáy hồ', nhomChiPhi: 'hoa_chat', soTienMacDinh: 1000000, ghiChu: 'Bảo dưỡng định kỳ thiết bị lọc', isTinhKQKD: true, thuTu: 8 },
+    { id: 'mau_9', tenChiPhi: 'Dụng cụ dạy bơi (Phao tay, ván bơi, kính)', nhomChiPhi: 'marketing', soTienMacDinh: 500000, ghiChu: 'Hao mòn & bổ sung cụm phao tập', isTinhKQKD: true, thuTu: 9 },
+    { id: 'mau_10', tenChiPhi: 'Quảng cáo Facebook & Tuyển sinh hè', nhomChiPhi: 'marketing', soTienMacDinh: 1500000, ghiChu: 'Ngân sách marketing khóa bơi kèm', isTinhKQKD: true, thuTu: 10 },
+    { id: 'mau_11', tenChiPhi: 'Internet cáp quang, giấy in thẻ, mực in', nhomChiPhi: 'van_hanh', soTienMacDinh: 500000, ghiChu: 'Quầy lễ tân check-in', isTinhKQKD: true, thuTu: 11 },
+    { id: 'mau_12', tenChiPhi: 'Thuốc men sơ cấp cứu & An toàn hồ', nhomChiPhi: 'chi_phi_khac', soTienMacDinh: 300000, ghiChu: 'Tủ thuốc y tế dự phòng', isTinhKQKD: true, thuTu: 12 }
+];
+
 // --- DOM ELEMENTS (Các phần tử UI chính) ---
 const globalLoader = document.getElementById('global-loader');
 const loginScreen = document.getElementById('login-screen');
@@ -603,6 +639,26 @@ const loadSettings = () => {
                 rateHBAInput.value = globalRateHBA;
                 rateTaxInput.value = globalRateTax;
                 
+                // Nạp định phí mẫu và danh sách chi phí từ main_config (Khắc phục lỗi permission)
+                if (Array.isArray(config.dinhPhiMau) && config.dinhPhiMau.length > 0) {
+                    globalDinhPhiMauList = config.dinhPhiMau;
+                } else {
+                    globalDinhPhiMauList = JSON.parse(JSON.stringify(DEFAULT_DINH_PHI_MAU));
+                }
+
+                if (Array.isArray(config.danhSachChiPhi)) {
+                    globalChiPhiList = config.danhSachChiPhi;
+                } else {
+                    globalChiPhiList = [];
+                }
+
+                if (typeof calculateAndRenderKQKD === 'function') {
+                    calculateAndRenderKQKD();
+                }
+                if (typeof renderTemplateListModal === 'function') {
+                    renderTemplateListModal();
+                }
+
                 // Logic ép tải lại khi có phiên bản mới
                 if (config.appVersion) {
                     if (initialAppVersion === null) {
@@ -3146,49 +3202,52 @@ function inVeK80(hocvien, soBuoiDaHoc, tongSoBuoi, maThe) {
 // --- MODULE BÁO CÁO KẾT QUẢ KINH DOANH & QUẢN LÝ CHI PHÍ CỐ ĐỊNH (P&L) ---
 // =========================================================================
 
-// Biến toàn cục cho KQKD
-let globalChiPhiList = [];
-let globalDinhPhiMauList = [];
-let currentKqkdPeriodMode = 'month';
-let currentKqkdMonth = '';
-let currentKqkdStartDate = null;
-let currentKqkdEndDate = null;
-let currentKqkdSummaryData = null;
-let currentEditingExpenseId = null;
-
-// Nhóm chi phí chuẩn
-const EXPENSE_GROUPS = {
-    mat_bang: { label: 'Mặt Bằng / Thuê Hồ', badgeClass: 'bg-blue-100 text-blue-800' },
-    nhan_su: { label: 'Nhân Sự Quản Lý & An Toàn', badgeClass: 'bg-green-100 text-green-800' },
-    van_hanh: { label: 'Tiện Ích (Điện, Nước, Net)', badgeClass: 'bg-yellow-100 text-yellow-800' },
-    hoa_chat: { label: 'Hóa Chất & Bảo Trì Hồ', badgeClass: 'bg-purple-100 text-purple-800' },
-    marketing: { label: 'Marketing & Dụng Cụ', badgeClass: 'bg-pink-100 text-pink-800' },
-    chi_phi_khac: { label: 'Chi Phí Khác (Tùy Biến)', badgeClass: 'bg-gray-100 text-gray-800' }
+// Helper lưu dữ liệu vào document app_config/main_config (Hoàn toàn không bị lỗi permissions)
+const saveChiPhiToFirestore = async () => {
+    await setDoc(doc(db, "app_config", "main_config"), {
+        danhSachChiPhi: globalChiPhiList
+    }, { merge: true });
 };
 
-// 12 Chi phí tối thiểu gợi ý cho Hồ bơi Q6
-const DEFAULT_DINH_PHI_MAU = [
-    { tenChiPhi: 'Tiền thuê mặt bằng hồ bơi / làn bơi Q6', nhomChiPhi: 'mat_bang', soTienMacDinh: 15000000, ghiChu: 'Hợp đồng thuê định kỳ TTTDTT', isTinhKQKD: true, thuTu: 1 },
-    { tenChiPhi: 'Lương nhân viên lễ tân & ghi danh', nhomChiPhi: 'nhan_su', soTienMacDinh: 6000000, ghiChu: 'Lương ca trực quầy tiếp đón', isTinhKQKD: true, thuTu: 2 },
-    { tenChiPhi: 'Lương nhân viên cứu hộ (Lifeguard)', nhomChiPhi: 'nhan_su', soTienMacDinh: 6000000, ghiChu: 'Trực an toàn bể bơi', isTinhKQKD: true, thuTu: 3 },
-    { tenChiPhi: 'Lương nhân viên vệ sinh sàn & tạp vụ', nhomChiPhi: 'nhan_su', soTienMacDinh: 3000000, ghiChu: 'Vệ sinh phòng tắm tráng, WC', isTinhKQKD: true, thuTu: 4 },
-    { tenChiPhi: 'Tiền điện (Bơm lọc cát tuần hoàn & chiếu sáng)', nhomChiPhi: 'van_hanh', soTienMacDinh: 4000000, ghiChu: 'Điện kinh doanh 3 pha', isTinhKQKD: true, thuTu: 5 },
-    { tenChiPhi: 'Tiền nước sạch cấp hồ & tráng xả', nhomChiPhi: 'van_hanh', soTienMacDinh: 2500000, ghiChu: 'Bổ sung hao hụt & vòi tắm tráng', isTinhKQKD: true, thuTu: 6 },
-    { tenChiPhi: 'Hóa chất Clo, PAC, pH xử lý nước hồ', nhomChiPhi: 'hoa_chat', soTienMacDinh: 2000000, ghiChu: 'Khử trùng nước đạt chuẩn y tế', isTinhKQKD: true, thuTu: 7 },
-    { tenChiPhi: 'Bảo trì máy bơm, robot hút cặn đáy hồ', nhomChiPhi: 'hoa_chat', soTienMacDinh: 1000000, ghiChu: 'Bảo dưỡng định kỳ thiết bị lọc', isTinhKQKD: true, thuTu: 8 },
-    { tenChiPhi: 'Dụng cụ dạy bơi (Phao tay, ván bơi, kính)', nhomChiPhi: 'marketing', soTienMacDinh: 500000, ghiChu: 'Hao mòn & bổ sung cụm phao tập', isTinhKQKD: true, thuTu: 9 },
-    { tenChiPhi: 'Quảng cáo Facebook & Tuyển sinh hè', nhomChiPhi: 'marketing', soTienMacDinh: 1500000, ghiChu: 'Ngân sách marketing khóa bơi kèm', isTinhKQKD: true, thuTu: 10 },
-    { tenChiPhi: 'Internet cáp quang, giấy in thẻ, mực in', nhomChiPhi: 'van_hanh', soTienMacDinh: 500000, ghiChu: 'Quầy lễ tân check-in', isTinhKQKD: true, thuTu: 11 },
-    { tenChiPhi: 'Thuốc men sơ cấp cứu & An toàn hồ', nhomChiPhi: 'chi_phi_khac', soTienMacDinh: 300000, ghiChu: 'Tủ thuốc y tế dự phòng', isTinhKQKD: true, thuTu: 12 }
-];
+const saveDinhPhiMauToFirestore = async () => {
+    await setDoc(doc(db, "app_config", "main_config"), {
+        dinhPhiMau: globalDinhPhiMauList
+    }, { merge: true });
+};
 
 // Helper format month cho input type="month"
 const formatMonthForInput = (date) => {
     if (!date) return '';
-    const d = (date instanceof Date) ? date : date.toDate();
+    const d = (date instanceof Date) ? date : (typeof date.toDate === 'function' ? date.toDate() : new Date(date));
     const year = d.getFullYear();
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     return `${year}-${month}`;
+};
+
+// Helper lấy ngày của khoản chi
+const getExpenseDate = (cp) => {
+    if (!cp) return new Date();
+    if (cp.ngayChi) {
+        if (typeof cp.ngayChi.toDate === 'function') return cp.ngayChi.toDate();
+        return new Date(cp.ngayChi);
+    }
+    if (cp.thangNam) {
+        const parts = cp.thangNam.split('-');
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 15);
+    }
+    return new Date();
+};
+
+const getExpenseDateDisplay = (cp) => {
+    if (!cp) return 'N/A';
+    if (cp.ngayChi) {
+        if (typeof cp.ngayChi === 'string' && cp.ngayChi.includes('-') && cp.ngayChi.length === 10) {
+            const p = cp.ngayChi.split('-');
+            return `${p[2]}/${p[1]}/${p[0]}`;
+        }
+        return formatDateForDisplay(getExpenseDate(cp));
+    }
+    return cp.thangNam || 'N/A';
 };
 
 // Khởi tạo tab KQKD
@@ -3210,40 +3269,8 @@ const setupKQKDTab = () => {
         filterToInput.value = formatDateForInput(lastDayOfMonth);
     }
 
-    // Đăng ký realtime listeners cho Chi Phí và Định Phí Mẫu
-    listenToChiPhi();
-    listenToDinhPhiMau();
     setupKQKDEventListeners();
-};
-
-// Realtime listener cho chi_phi_thang
-const listenToChiPhi = () => {
-    if (unsubChiPhi) unsubChiPhi();
-    const q = query(collection(db, "chi_phi_thang"), orderBy("ngayTao", "desc"));
-    unsubChiPhi = onSnapshot(q, (snapshot) => {
-        globalChiPhiList = [];
-        snapshot.forEach((docSnap) => {
-            globalChiPhiList.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        calculateAndRenderKQKD();
-    }, (error) => {
-        console.error("Lỗi realtime chi phí:", error);
-    });
-};
-
-// Realtime listener cho dinh_phi_mau
-const listenToDinhPhiMau = () => {
-    if (unsubDinhPhiMau) unsubDinhPhiMau();
-    const q = query(collection(db, "dinh_phi_mau"), orderBy("thuTu", "asc"));
-    unsubDinhPhiMau = onSnapshot(q, (snapshot) => {
-        globalDinhPhiMauList = [];
-        snapshot.forEach((docSnap) => {
-            globalDinhPhiMauList.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        renderTemplateListModal();
-    }, (error) => {
-        console.error("Lỗi realtime định phí mẫu:", error);
-    });
+    calculateAndRenderKQKD();
 };
 
 // Thiết lập các Event Listeners của Tab KQKD
@@ -3357,7 +3384,7 @@ const setupKQKDEventListeners = () => {
 // --- TÍNH TOÁN VÀ HIỂN THỊ KẾT QUẢ KINH DOANH (P&L) ---
 // =========================================================================
 
-const calculateAndRenderKQKD = () => {
+function calculateAndRenderKQKD() {
     // 1. Xác định phạm vi thời gian
     let periodLabel = '';
     let filteredStudents = [];
@@ -3713,10 +3740,12 @@ const renderExpenseTable = (expenses) => {
 // Bật/tắt Checkbox tính KQKD
 window.handleToggleExpense = async (expenseId, currentStatus) => {
     try {
-        const newStatus = !currentStatus;
-        await updateDoc(doc(db, "chi_phi_thang", expenseId), {
-            isTinhKQKD: newStatus
-        });
+        const cp = globalChiPhiList.find(c => c.id === expenseId);
+        if (cp) {
+            cp.isTinhKQKD = !currentStatus;
+            calculateAndRenderKQKD();
+            await saveChiPhiToFirestore();
+        }
     } catch (error) {
         showModal(`Lỗi cập nhật trạng thái chi phí: ${error.message}`, "Lỗi");
     }
@@ -3734,12 +3763,12 @@ const handleToggleAllExpensesInView = async () => {
     const targetStatus = hasInactive; // Nếu có mục chưa tick thì tick hết, ngược lại bỏ tick hết
 
     try {
-        const batch = writeBatch(db);
-        expenses.forEach(cp => {
-            const docRef = doc(db, "chi_phi_thang", cp.id);
-            batch.update(docRef, { isTinhKQKD: targetStatus });
+        expenses.forEach(targetCp => {
+            const cp = globalChiPhiList.find(c => c.id === targetCp.id);
+            if (cp) cp.isTinhKQKD = targetStatus;
         });
-        await batch.commit();
+        calculateAndRenderKQKD();
+        await saveChiPhiToFirestore();
         showModal(`Đã ${targetStatus ? 'BẬT' : 'TẮT'} tính vào KQKD cho ${expenses.length} khoản chi.`, "Thành công");
     } catch (error) {
         showModal(`Lỗi cập nhật hàng loạt: ${error.message}`, "Lỗi");
@@ -3765,7 +3794,7 @@ const openExpenseModal = (expenseData = null) => {
         document.getElementById('kqkd-exp-month').value = expenseData.thangNam || currentKqkdMonth;
         
         if (expenseData.ngayChi) {
-            const d = (expenseData.ngayChi instanceof Timestamp) ? expenseData.ngayChi.toDate() : new Date(expenseData.ngayChi);
+            const d = getExpenseDate(expenseData);
             document.getElementById('kqkd-exp-date').value = formatDateForInput(d);
         } else {
             document.getElementById('kqkd-exp-date').value = formatDateForInput(new Date());
@@ -3816,27 +3845,39 @@ const handleExpenseFormSubmit = async (e) => {
         if (!tenChiPhi) throw new Error("Vui lòng nhập tên khoản chi.");
         if (soTien < 0) throw new Error("Số tiền không hợp lệ.");
 
-        const payload = {
-            tenChiPhi,
-            nhomChiPhi,
-            soTien,
-            thangNam,
-            isTinhKQKD,
-            ghiChu,
-            ngayChi: ngayChiStr ? Timestamp.fromDate(new Date(`${ngayChiStr}T12:00:00`)) : Timestamp.now(),
-            nguoiTaoEmail: currentUser ? currentUser.email : 'admin',
-            ngayCapNhat: Timestamp.now()
-        };
-
         if (id) {
-            await updateDoc(doc(db, "chi_phi_thang", id), payload);
+            const cp = globalChiPhiList.find(c => c.id === id);
+            if (cp) {
+                cp.tenChiPhi = tenChiPhi;
+                cp.nhomChiPhi = nhomChiPhi;
+                cp.soTien = soTien;
+                cp.thangNam = thangNam;
+                cp.ngayChi = ngayChiStr;
+                cp.isTinhKQKD = isTinhKQKD;
+                cp.ghiChu = ghiChu;
+                cp.ngayCapNhat = new Date().toISOString();
+            }
+            await saveChiPhiToFirestore();
             showModal(`Đã cập nhật khoản chi "${tenChiPhi}".`, "Thành công");
         } else {
-            payload.ngayTao = Timestamp.now();
-            await addDoc(collection(db, "chi_phi_thang"), payload);
+            const newExpense = {
+                id: 'cp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                tenChiPhi,
+                nhomChiPhi,
+                soTien,
+                thangNam,
+                isTinhKQKD,
+                ghiChu,
+                ngayChi: ngayChiStr || `${thangNam}-01`,
+                nguoiTaoEmail: currentUser ? currentUser.email : 'admin',
+                ngayTao: new Date().toISOString()
+            };
+            globalChiPhiList.unshift(newExpense);
+            await saveChiPhiToFirestore();
             showModal(`Đã thêm khoản chi "${tenChiPhi}".`, "Thành công");
         }
 
+        calculateAndRenderKQKD();
         closeExpenseModal();
     } catch (error) {
         showModal(`Lỗi lưu chi phí: ${error.message}`, "Lỗi");
@@ -3859,7 +3900,9 @@ window.handleDeleteExpense = async (expenseId, expenseName) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa khoản chi "${expenseName}"?`)) return;
 
     try {
-        await deleteDoc(doc(db, "chi_phi_thang", expenseId));
+        globalChiPhiList = globalChiPhiList.filter(c => c.id !== expenseId);
+        calculateAndRenderKQKD();
+        await saveChiPhiToFirestore();
         showModal(`Đã xóa khoản chi "${expenseName}".`, "Thành công");
     } catch (error) {
         showModal(`Lỗi xóa chi phí: ${error.message}`, "Lỗi");
@@ -3876,14 +3919,10 @@ window.handleQuickApplyTemplate = () => {
 };
 
 // Áp dụng định phí mẫu sang kỳ đang xem
-const handleApplyDinhPhiMau = async () => {
+async function handleApplyDinhPhiMau() {
     if (globalDinhPhiMauList.length === 0) {
-        const confirmInit = confirm("Chưa có danh mục định phí mẫu nào trong hệ thống.\nBạn có muốn tự động nạp 12 chi phí mẫu chuẩn của Hồ bơi Q6 ngay bây giờ không?");
-        if (confirmInit) {
-            await handleInitDefaultDinhPhiMau();
-        } else {
-            return;
-        }
+        globalDinhPhiMauList = JSON.parse(JSON.stringify(DEFAULT_DINH_PHI_MAU));
+        await saveDinhPhiMauToFirestore();
     }
 
     const targetMonth = currentKqkdMonth || formatMonthForInput(new Date());
@@ -3894,74 +3933,75 @@ const handleApplyDinhPhiMau = async () => {
         return;
     }
 
-    const confirmApply = confirm(`Hệ thống sẽ sao chép ${activeTemplates.length} khoản định phí mẫu vào tháng [${targetMonth}].\nBạn có muốn tiếp tục?`);
+    const existingInMonth = globalChiPhiList.filter(cp => cp.thangNam === targetMonth);
+    let msg = `Hệ thống sẽ sao chép ${activeTemplates.length} khoản định phí mẫu vào tháng [${targetMonth}].\nBạn có muốn tiếp tục?`;
+    if (existingInMonth.length > 0) {
+        msg = `Tháng [${targetMonth}] hiện đã có ${existingInMonth.length} khoản chi.\nBạn có muốn nạp thêm ${activeTemplates.length} khoản định phí mẫu vào tháng này không?`;
+    }
+
+    const confirmApply = confirm(msg);
     if (!confirmApply) return;
 
     try {
-        const batch = writeBatch(db);
-        const [y, m] = targetMonth.split('-');
-        const defaultDate = new Date(parseInt(y), parseInt(m) - 1, 1, 12, 0, 0);
+        const nowStr = new Date().toISOString();
+        const defaultDateStr = `${targetMonth}-01`;
 
         activeTemplates.forEach((tpl) => {
-            const newDocRef = doc(collection(db, "chi_phi_thang"));
-            batch.set(newDocRef, {
+            const newExpense = {
+                id: 'cp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                 tenChiPhi: tpl.tenChiPhi,
                 nhomChiPhi: tpl.nhomChiPhi || 'mat_bang',
                 soTien: Number(tpl.soTienMacDinh) || 0,
                 thangNam: targetMonth,
                 isTinhKQKD: true,
                 ghiChu: tpl.ghiChu || 'Định phí hàng tháng',
-                ngayChi: Timestamp.fromDate(defaultDate),
+                ngayChi: defaultDateStr,
                 nguoiTaoEmail: currentUser ? currentUser.email : 'admin',
-                ngayTao: Timestamp.now()
-            });
+                ngayTao: nowStr
+            };
+            globalChiPhiList.unshift(newExpense);
         });
 
-        await batch.commit();
+        await saveChiPhiToFirestore();
+        calculateAndRenderKQKD();
         showModal(`Đã áp dụng thành công ${activeTemplates.length} khoản định phí vào tháng ${targetMonth}.`, "Thành công");
     } catch (error) {
         showModal(`Lỗi áp dụng định phí: ${error.message}`, "Lỗi");
     }
-};
+}
 
 // Khởi tạo 12 định phí mẫu chuẩn cho Hồ bơi Q6
-const handleInitDefaultDinhPhiMau = async () => {
+async function handleInitDefaultDinhPhiMau() {
     try {
-        const batch = writeBatch(db);
-        DEFAULT_DINH_PHI_MAU.forEach((item) => {
-            const newDocRef = doc(collection(db, "dinh_phi_mau"));
-            batch.set(newDocRef, {
-                ...item,
-                ngayTao: Timestamp.now()
-            });
-        });
-        await batch.commit();
-        showModal("Đã khởi tạo thành công 12 danh mục chi phí định kỳ chuẩn của Hồ bơi Q6!", "Thành công");
+        globalDinhPhiMauList = JSON.parse(JSON.stringify(DEFAULT_DINH_PHI_MAU));
+        await saveDinhPhiMauToFirestore();
+        renderTemplateListModal();
+        showModal("Đã nạp thành công 12 danh mục chi phí định kỳ chuẩn của Hồ bơi Q6!", "Thành công");
     } catch (error) {
         showModal(`Lỗi khởi tạo định phí mẫu: ${error.message}`, "Lỗi");
     }
-};
+}
 
 // Mở modal Định Phí Mẫu
-const openTemplateModal = () => {
+function openTemplateModal() {
     const modal = document.getElementById('kqkd-template-modal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     }
     renderTemplateListModal();
-};
+}
 
-const closeTemplateModal = () => {
+function closeTemplateModal() {
     const modal = document.getElementById('kqkd-template-modal');
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
-};
+}
 
 // Render bảng danh mục định phí mẫu trong modal
-const renderTemplateListModal = () => {
+function renderTemplateListModal() {
     const tbody = document.getElementById('tpl-table-body');
     if (!tbody) return;
 
@@ -4016,9 +4056,12 @@ const renderTemplateListModal = () => {
 // Bật/tắt mặc định template
 window.handleToggleTemplateActive = async (templateId, currentStatus) => {
     try {
-        await updateDoc(doc(db, "dinh_phi_mau", templateId), {
-            isTinhKQKD: !currentStatus
-        });
+        const tpl = globalDinhPhiMauList.find(t => t.id === templateId);
+        if (tpl) {
+            tpl.isTinhKQKD = !currentStatus;
+            renderTemplateListModal();
+            await saveDinhPhiMauToFirestore();
+        }
     } catch (error) {
         showModal(`Lỗi cập nhật định phí mẫu: ${error.message}`, "Lỗi");
     }
@@ -4035,10 +4078,13 @@ window.handleEditTemplateAmount = async (templateId, currentAmount) => {
     }
 
     try {
-        await updateDoc(doc(db, "dinh_phi_mau", templateId), {
-            soTienMacDinh: newAmount
-        });
-        showModal("Đã cập nhật số tiền định phí mẫu.", "Thành công");
+        const tpl = globalDinhPhiMauList.find(t => t.id === templateId);
+        if (tpl) {
+            tpl.soTienMacDinh = newAmount;
+            renderTemplateListModal();
+            await saveDinhPhiMauToFirestore();
+            showModal("Đã cập nhật số tiền định phí mẫu.", "Thành công");
+        }
     } catch (error) {
         showModal(`Lỗi cập nhật: ${error.message}`, "Lỗi");
     }
@@ -4048,7 +4094,9 @@ window.handleEditTemplateAmount = async (templateId, currentAmount) => {
 window.handleDeleteTemplate = async (templateId, templateName) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa định phí mẫu "${templateName}"?`)) return;
     try {
-        await deleteDoc(doc(db, "dinh_phi_mau", templateId));
+        globalDinhPhiMauList = globalDinhPhiMauList.filter(t => t.id !== templateId);
+        renderTemplateListModal();
+        await saveDinhPhiMauToFirestore();
         showModal(`Đã xóa "${templateName}".`, "Thành công");
     } catch (error) {
         showModal(`Lỗi xóa: ${error.message}`, "Lỗi");
@@ -4065,15 +4113,19 @@ const handleAddNewTemplatePrompt = async () => {
     const soTienMacDinh = Number(soTienStr) || 0;
 
     try {
-        await addDoc(collection(db, "dinh_phi_mau"), {
+        const newTpl = {
+            id: 'mau_' + Date.now(),
             tenChiPhi: tenChiPhi.trim(),
             nhomChiPhi: 'chi_phi_khac',
             soTienMacDinh: soTienMacDinh,
             isTinhKQKD: true,
             isCustom: true,
             thuTu: globalDinhPhiMauList.length + 1,
-            ngayTao: Timestamp.now()
-        });
+            ngayTao: new Date().toISOString()
+        };
+        globalDinhPhiMauList.push(newTpl);
+        renderTemplateListModal();
+        await saveDinhPhiMauToFirestore();
         showModal(`Đã thêm định phí mẫu "${tenChiPhi}".`, "Thành công");
     } catch (error) {
         showModal(`Lỗi thêm định phí mẫu: ${error.message}`, "Lỗi");
