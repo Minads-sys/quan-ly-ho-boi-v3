@@ -1,9 +1,10 @@
+Set-Location $PSScriptRoot
 $timestamp = (Get-Date).ToString("yyyyMMddHHmmss")
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host "BAT DAU DEPLOY PHIEN BAN: $timestamp" -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
 
-$htmlPath = "app.html"
+$htmlPath = "$PSScriptRoot\app.html"
 $htmlContent = Get-Content $htmlPath -Raw -Encoding UTF8
 
 # Cap nhat app.css
