@@ -6,7 +6,7 @@
     <title>Quản lý Hồ bơi HBA V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="app.css?v=20260812082051">
+    <link rel="stylesheet" href="app.css?v=20261013093647">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -89,6 +89,9 @@
                     </button>
                     <button data-tab="bao-cao" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Báo cáo
+                    </button>
+                    <button data-tab="kqkd" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
+                        KQ Kinh Doanh
                     </button>
                     <button data-tab="import" class="tab-button text-left py-3 px-4 sm:py-4 sm:px-1 rounded-lg sm:rounded-none border-l-4 sm:border-l-0 sm:border-b-2 font-medium text-base sm:text-sm border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 sm:hover:bg-transparent sm:hover:border-gray-300 admin-only">
                         Import
@@ -486,8 +489,192 @@
                     </div>
                 </div>
 
+                <div id="content-kqkd" class="tab-panel">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                                <span>📊</span> Báo Cáo Kết Quả Kinh Doanh & Chi Phí
+                            </h2>
+                            <p class="text-sm text-gray-500 mt-1">Hạch toán Doanh thu, Hoa hồng HLV, Chi phí cố định & Lợi nhuận ròng (P&L)</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="kqkd-template-btn" class="bg-purple-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-sm text-sm">
+                                <span>⚙️</span> Định Phí Mẫu
+                            </button>
+                            <button id="kqkd-add-expense-btn" class="bg-indigo-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1.5 shadow-sm text-sm">
+                                <span>➕</span> Thêm Khoản Chi
+                            </button>
+                            <button id="kqkd-print-btn" class="bg-blue-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 shadow-sm text-sm">
+                                <span>🖨️</span> In Báo Cáo
+                            </button>
+                            <button id="kqkd-excel-btn" class="bg-green-600 text-white font-medium py-2 px-3 sm:px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1.5 shadow-sm text-sm">
+                                <span>📥</span> Xuất Excel
+                            </button>
+                        </div>
+                    </div>
 
-                <div id="content-import" class="tab-panel">
+                    <!-- BỘ LỌC THỜI GIAN & HẠCH TOÁN -->
+                    <div class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 mb-6 shadow-sm">
+                        <div class="mb-3">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Chọn chế độ hạch toán kỳ báo cáo:</label>
+                            <div class="flex flex-wrap gap-4 text-sm">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="kqkd-period-mode" value="month" checked class="form-radio text-indigo-600 focus:ring-indigo-500">
+                                    <span class="ml-2 font-medium text-gray-800">Theo Tháng Cụ Thể</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="kqkd-period-mode" value="all" class="form-radio text-indigo-600 focus:ring-indigo-500">
+                                    <span class="ml-2 font-medium text-gray-800">Toàn Bộ Thời Gian (Tích Lũy)</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="radio" name="kqkd-period-mode" value="custom" class="form-radio text-indigo-600 focus:ring-indigo-500">
+                                    <span class="ml-2 font-medium text-gray-800">Khoảng Thời Gian Tùy Chọn</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end pt-2 border-t border-gray-200">
+                            <!-- Bộ chọn tháng -->
+                            <div id="kqkd-month-container" class="sm:col-span-2 md:col-span-2">
+                                <label for="kqkd-filter-month" class="block text-xs font-semibold text-gray-600 uppercase mb-1">Tháng Hạch Toán</label>
+                                <input type="month" id="kqkd-filter-month" class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
+                            </div>
+
+                            <!-- Bộ chọn khoảng thời gian tùy chọn (ẩn mặc định) -->
+                            <div id="kqkd-custom-range-container" class="hidden sm:col-span-2 md:col-span-2 grid grid-cols-2 gap-2">
+                                <div>
+                                    <label for="kqkd-filter-from" class="block text-xs font-semibold text-gray-600 uppercase mb-1">Từ Ngày</label>
+                                    <input type="date" id="kqkd-filter-from" class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                </div>
+                                <div>
+                                    <label for="kqkd-filter-to" class="block text-xs font-semibold text-gray-600 uppercase mb-1">Đến Ngày</label>
+                                    <input type="date" id="kqkd-filter-to" class="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                </div>
+                            </div>
+
+                            <!-- Nút Xem & Nút Áp dụng định phí -->
+                            <div class="sm:col-span-2 md:col-span-2 flex flex-col sm:flex-row gap-2">
+                                <button id="kqkd-view-btn" class="flex-1 flex justify-center items-center gap-2 bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors text-sm shadow-sm">
+                                    <span id="kqkd-spinner" class="loader-sm hidden"></span>
+                                    <span>🔍 Xem Báo Cáo</span>
+                                </button>
+                                <button id="kqkd-apply-template-btn" class="flex-1 flex justify-center items-center gap-1.5 bg-amber-500 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors text-sm shadow-sm" title="Sao chép toàn bộ định phí mẫu vào kỳ hạch toán này">
+                                    <span>⚡ Áp Dụng Định Phí</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- THẺ KPI TỔNG QUAN METRICS CARDS -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+                        <!-- Card 1: Doanh thu -->
+                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl shadow-sm">
+                            <span class="block text-xs font-semibold uppercase text-blue-700 tracking-wider">Tổng Doanh Thu</span>
+                            <span id="kpi-doanh-thu" class="block text-xl font-bold text-blue-900 mt-1">0 VNĐ</span>
+                            <span id="kpi-so-hv" class="text-xs text-blue-600">0 học viên mới</span>
+                        </div>
+                        <!-- Card 2: Hoa hồng HLV -->
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-sm">
+                            <span class="block text-xs font-semibold uppercase text-amber-700 tracking-wider">Chi Phí HLV (Hoa Hồng)</span>
+                            <span id="kpi-hlv-cost" class="block text-xl font-bold text-amber-900 mt-1">0 VNĐ</span>
+                            <span id="kpi-hlv-rate" class="text-xs text-amber-600">70% Doanh thu</span>
+                        </div>
+                        <!-- Card 3: Lợi nhuận gộp HBA -->
+                        <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl shadow-sm">
+                            <span class="block text-xs font-semibold uppercase text-indigo-700 tracking-wider">Lợi Nhuận Gộp (HBA)</span>
+                            <span id="kpi-loi-nhuan-gop" class="block text-xl font-bold text-indigo-900 mt-1">0 VNĐ</span>
+                            <span id="kpi-hba-rate" class="text-xs text-indigo-600">Phần HBA giữ lại</span>
+                        </div>
+                        <!-- Card 4: Tổng chi phí -->
+                        <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl shadow-sm">
+                            <span class="block text-xs font-semibold uppercase text-rose-700 tracking-wider">Tổng Chi Phí (Đang tính)</span>
+                            <span id="kpi-tong-chi-phi" class="block text-xl font-bold text-rose-900 mt-1">0 VNĐ</span>
+                            <span id="kpi-chi-phi-count" class="text-xs text-rose-600">0 khoản chi hợp lệ</span>
+                        </div>
+                        <!-- Card 5: Lợi nhuận ròng -->
+                        <div id="kpi-card-net-profit" class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl shadow-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="block text-xs font-semibold uppercase text-emerald-700 tracking-wider">Lợi Nhuận Ròng</span>
+                                <span id="kpi-badge-profit" class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-200 text-emerald-800">LÃI</span>
+                            </div>
+                            <span id="kpi-loi-nhuan-rong" class="block text-xl font-bold text-emerald-900 mt-1">0 VNĐ</span>
+                            <span id="kpi-profit-margin" class="text-xs text-emerald-600">Biên LN: 0%</span>
+                        </div>
+                        <!-- Card 6: Điểm hòa vốn -->
+                        <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl shadow-sm">
+                            <span class="block text-xs font-semibold uppercase text-purple-700 tracking-wider">Điểm Hòa Vốn</span>
+                            <span id="kpi-diem-hoa-von" class="block text-xl font-bold text-purple-900 mt-1">0 VNĐ</span>
+                            <span id="kpi-hv-hoa-von" class="text-xs text-purple-600">Cần tối thiểu: 0 HV</span>
+                        </div>
+                    </div>
+
+                    <!-- BỐ CỤC 2 CỘT: P&L VÀ SỔ CHI PHÍ -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <!-- CỘT 1: BẢNG P&L KẾT QUẢ KINH DOANH -->
+                        <div class="lg:col-span-5 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-indigo-700 text-white px-5 py-3.5 flex justify-between items-center">
+                                <h3 class="font-bold text-base flex items-center gap-2">
+                                    <span>📈</span> Báo Cáo P&L (Lãi / Lỗ)
+                                </h3>
+                                <span id="pnl-period-label" class="text-xs bg-indigo-800 px-2 py-1 rounded">...</span>
+                            </div>
+                            <div class="p-4 overflow-x-auto">
+                                <table class="min-w-full text-sm divide-y divide-gray-200">
+                                    <thead>
+                                        <tr class="text-xs font-semibold text-gray-500 uppercase bg-gray-50">
+                                            <th class="py-2.5 px-3 text-left">Chỉ Tiêu Hạch Toán</th>
+                                            <th class="py-2.5 px-3 text-right">Số Tiền (VNĐ)</th>
+                                            <th class="py-2.5 px-3 text-right">% Doanh Thu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pnl-table-body" class="divide-y divide-gray-100">
+                                        <!-- Dữ liệu render bằng JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- CỘT 2: QUẢN LÝ SỔ CHI PHÍ & CHECKBOX TÍNH VÀO KQKD -->
+                        <div class="lg:col-span-7 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-gray-800 text-white px-5 py-3.5 flex flex-wrap justify-between items-center gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-base">📑 Sổ Chi Phí Kỳ Hạch Toán</span>
+                                    <span id="expense-count-badge" class="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">0 khoản</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <button id="kqkd-toggle-all-check" class="bg-gray-700 hover:bg-gray-600 text-white py-1 px-2.5 rounded transition-colors">
+                                        Tick Tất Cả
+                                    </button>
+                                    <button id="kqkd-add-expense-quick-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white py-1 px-2.5 rounded font-bold transition-colors">
+                                        + Thêm Chi Phí
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="p-4">
+                                <p class="text-xs text-gray-500 mb-3 italic">
+                                    💡 <strong>Mẹo:</strong> Click trực tiếp vào ô <input type="checkbox" checked disabled class="align-middle"> <strong>"Tính KQKD"</strong> để bật hoặc loại bỏ khoản chi đó ra khỏi kết quả kinh doanh tức thì mà không cần xóa dữ liệu.
+                                </p>
+                                <div class="overflow-x-auto max-h-[480px] overflow-y-auto border border-gray-200 rounded-lg">
+                                    <table class="min-w-full text-sm divide-y divide-gray-200">
+                                        <thead class="bg-gray-50 sticky top-0 z-10">
+                                            <tr class="text-xs font-semibold text-gray-500 uppercase">
+                                                <th class="py-2.5 px-3 text-center w-12" title="Tính vào kết quả kinh doanh">Tính</th>
+                                                <th class="py-2.5 px-3 text-left">Khoản Chi / Nhóm</th>
+                                                <th class="py-2.5 px-3 text-right">Số Tiền (VNĐ)</th>
+                                                <th class="py-2.5 px-3 text-center whitespace-nowrap">Ngày Chi</th>
+                                                <th class="py-2.5 px-3 text-center w-20">Thao Tác</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="expense-table-body" class="divide-y divide-gray-100 bg-white">
+                                            <!-- Dữ liệu render bằng JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <h2 class="text-2xl font-semibold mb-6">Import Dữ liệu Học viên (Excel)</h2>
                     
                     <div class="max-w-xl space-y-6">
@@ -834,6 +1021,125 @@
         </div>
     </div>
 
+    <!-- MODAL THÊM / SỬA CHI PHÍ -->
+    <div id="kqkd-expense-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-lg p-6 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <h3 id="kqkd-exp-modal-title" class="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
+                <span>➕</span> <span>Thêm Khoản Chi Phí</span>
+            </h3>
+            <form id="kqkd-expense-form" class="space-y-4">
+                <input type="hidden" id="kqkd-exp-id">
+                
+                <div>
+                    <label for="kqkd-exp-name" class="block text-sm font-semibold text-gray-700">Tên Khoản Chi <span class="text-red-500">*</span></label>
+                    <input type="text" id="kqkd-exp-name" required placeholder="VD: Tiền thuê hồ bơi, Lương lễ tân, Tiền điện..." class="mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="kqkd-exp-group" class="block text-sm font-semibold text-gray-700">Nhóm Chi Phí <span class="text-red-500">*</span></label>
+                        <select id="kqkd-exp-group" required class="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
+                            <option value="mat_bang">🏢 Mặt Bằng / Thuê Hồ</option>
+                            <option value="nhan_su">👥 Nhân Sự (Lễ tân, Cứu hộ...)</option>
+                            <option value="van_hanh">⚡ Tiện Ích (Điện, Nước, Net)</option>
+                            <option value="hoa_chat">🧪 Hóa Chất & Bảo Trì Hồ</option>
+                            <option value="marketing">📢 Marketing & Dụng Cụ</option>
+                            <option value="chi_phi_khac">✨ Chi Phí Khác (Tùy biến)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="kqkd-exp-amount" class="block text-sm font-semibold text-gray-700">Số Tiền (VNĐ) <span class="text-red-500">*</span></label>
+                        <input type="number" id="kqkd-exp-amount" required min="0" step="1000" placeholder="VD: 5000000" class="mt-1 block w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-indigo-700">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="kqkd-exp-month" class="block text-sm font-semibold text-gray-700">Tháng Hạch Toán <span class="text-red-500">*</span></label>
+                        <input type="month" id="kqkd-exp-month" required class="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
+                    </div>
+                    <div>
+                        <label for="kqkd-exp-date" class="block text-sm font-semibold text-gray-700">Ngày Chi Thực Tế</label>
+                        <input type="date" id="kqkd-exp-date" class="mt-1 block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white text-sm">
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="kqkd-exp-active" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 rounded border-gray-300">
+                        <span class="text-sm font-semibold text-indigo-900">Tính khoản này vào Kết Quả Kinh Doanh (P&L)</span>
+                    </label>
+                    <p class="text-xs text-indigo-700 mt-1 pl-6">Nếu bỏ tick, khoản chi này vẫn được lưu trong sổ nhưng không trừ vào lợi nhuận.</p>
+                </div>
+
+                <div>
+                    <label for="kqkd-exp-note" class="block text-sm font-semibold text-gray-700">Ghi Chú / Số Hóa Đơn</label>
+                    <textarea id="kqkd-exp-note" rows="2" placeholder="Ghi chú thêm về người nhận, hóa đơn, ủy nhiệm chi..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t border-gray-200">
+                    <button type="button" id="kqkd-exp-cancel-btn" class="bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                        Huỷ
+                    </button>
+                    <button type="submit" id="kqkd-exp-save-btn" class="bg-indigo-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-colors text-sm shadow-sm flex items-center gap-1.5">
+                        <span id="kqkd-exp-spinner" class="loader-sm hidden"></span>
+                        <span>Lưu Khoản Chi</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL QUẢN LÝ ĐỊNH PHÍ MẪU (TEMPLATES) -->
+    <div id="kqkd-template-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden modal">
+        <div class="modal-content bg-white w-full max-w-2xl p-6 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                        <span>⚙️</span> <span>Danh Mục Định Phí Mẫu Hàng Tháng</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">Danh mục các khoản chi cố định thường niên. Dùng để áp dụng tự động sang các tháng mới.</p>
+                </div>
+                <button type="button" id="kqkd-tpl-close-x" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">
+                    &times;
+                </button>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                <button type="button" id="kqkd-tpl-init-default-btn" class="bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold py-1.5 px-3 rounded-lg text-xs transition-colors border border-amber-300">
+                    🔄 Nạp Danh Mục Chi Phí Gợi Ý Hồ Bơi Q6
+                </button>
+                <button type="button" id="kqkd-tpl-add-new-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors shadow-sm">
+                    + Thêm Định Phí Mẫu Mới
+                </button>
+            </div>
+
+            <!-- Bảng danh sách định phí mẫu -->
+            <div class="overflow-x-auto border border-gray-200 rounded-lg max-h-[360px] overflow-y-auto mb-4">
+                <table class="min-w-full text-sm divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0 z-10">
+                        <tr class="text-xs font-semibold text-gray-500 uppercase">
+                            <th class="py-2.5 px-3 text-center w-12">Mặc Định</th>
+                            <th class="py-2.5 px-3 text-left">Tên Khoản Chi / Nhóm</th>
+                            <th class="py-2.5 px-3 text-right">Số Tiền Chuẩn (VNĐ)</th>
+                            <th class="py-2.5 px-3 text-center w-24">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tpl-table-body" class="divide-y divide-gray-100 bg-white">
+                        <!-- Render bằng JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500 italic">💡 Bạn có thể bật/tắt [x] để chọn những mục sẽ được tự động nhân bản khi sang tháng mới.</span>
+                <button type="button" id="kqkd-tpl-close-btn" class="bg-gray-700 text-white font-semibold py-2 px-5 rounded-lg hover:bg-gray-800 transition-colors text-sm">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="print-section" class="hidden">
         </div>
 
@@ -873,10 +1179,11 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script type="module" src="app.js?v=20260812082051"></script>
+    <script type="module" src="app.js?v=20261013093647"></script>
     
 </body>
 </html>
+
 
 
 

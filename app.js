@@ -89,6 +89,8 @@ let quickReportData = []; // Lưu HV trong ngày cho báo cáo nhanh
 let unsubGoiHoc = null;
 let unsubHLV = null;
 let unsubHocVien = null;
+let unsubChiPhi = null;
+let unsubDinhPhiMau = null;
 
 // --- DOM ELEMENTS (Các phần tử UI chính) ---
 const globalLoader = document.getElementById('global-loader');
@@ -491,6 +493,14 @@ const detachAllListeners = () => {
         unsubHocVien();
         unsubHocVien = null;
     }
+    if (unsubChiPhi) {
+        unsubChiPhi();
+        unsubChiPhi = null;
+    }
+    if (unsubDinhPhiMau) {
+        unsubDinhPhiMau();
+        unsubDinhPhiMau = null;
+    }
 };
 
 
@@ -513,6 +523,7 @@ const loadAllInitialData = async () => {
     await loadHocVien();
     setupGhiDanhTab();
     setupReportTabDefaults();
+    setupKQKDTab();
     
     // Set default date for QR filter if exists
     if(document.getElementById('qr-date-from')) {
@@ -3130,3 +3141,1189 @@ function inVeK80(hocvien, soBuoiDaHoc, tongSoBuoi, maThe) {
         }
     }, 5000);
 }
+
+// =========================================================================
+// --- MODULE BÁO CÁO KẾT QUẢ KINH DOANH & QUẢN LÝ CHI PHÍ CỐ ĐỊNH (P&L) ---
+// =========================================================================
+
+// Biến toàn cục cho KQKD
+let globalChiPhiList = [];
+let globalDinhPhiMauList = [];
+let currentKqkdPeriodMode = 'month';
+let currentKqkdMonth = '';
+let currentKqkdStartDate = null;
+let currentKqkdEndDate = null;
+let currentKqkdSummaryData = null;
+let currentEditingExpenseId = null;
+
+// Nhóm chi phí chuẩn
+const EXPENSE_GROUPS = {
+    mat_bang: { label: 'Mặt Bằng / Thuê Hồ', badgeClass: 'bg-blue-100 text-blue-800' },
+    nhan_su: { label: 'Nhân Sự Quản Lý & An Toàn', badgeClass: 'bg-green-100 text-green-800' },
+    van_hanh: { label: 'Tiện Ích (Điện, Nước, Net)', badgeClass: 'bg-yellow-100 text-yellow-800' },
+    hoa_chat: { label: 'Hóa Chất & Bảo Trì Hồ', badgeClass: 'bg-purple-100 text-purple-800' },
+    marketing: { label: 'Marketing & Dụng Cụ', badgeClass: 'bg-pink-100 text-pink-800' },
+    chi_phi_khac: { label: 'Chi Phí Khác (Tùy Biến)', badgeClass: 'bg-gray-100 text-gray-800' }
+};
+
+// 12 Chi phí tối thiểu gợi ý cho Hồ bơi Q6
+const DEFAULT_DINH_PHI_MAU = [
+    { tenChiPhi: 'Tiền thuê mặt bằng hồ bơi / làn bơi Q6', nhomChiPhi: 'mat_bang', soTienMacDinh: 15000000, ghiChu: 'Hợp đồng thuê định kỳ TTTDTT', isTinhKQKD: true, thuTu: 1 },
+    { tenChiPhi: 'Lương nhân viên lễ tân & ghi danh', nhomChiPhi: 'nhan_su', soTienMacDinh: 6000000, ghiChu: 'Lương ca trực quầy tiếp đón', isTinhKQKD: true, thuTu: 2 },
+    { tenChiPhi: 'Lương nhân viên cứu hộ (Lifeguard)', nhomChiPhi: 'nhan_su', soTienMacDinh: 6000000, ghiChu: 'Trực an toàn bể bơi', isTinhKQKD: true, thuTu: 3 },
+    { tenChiPhi: 'Lương nhân viên vệ sinh sàn & tạp vụ', nhomChiPhi: 'nhan_su', soTienMacDinh: 3000000, ghiChu: 'Vệ sinh phòng tắm tráng, WC', isTinhKQKD: true, thuTu: 4 },
+    { tenChiPhi: 'Tiền điện (Bơm lọc cát tuần hoàn & chiếu sáng)', nhomChiPhi: 'van_hanh', soTienMacDinh: 4000000, ghiChu: 'Điện kinh doanh 3 pha', isTinhKQKD: true, thuTu: 5 },
+    { tenChiPhi: 'Tiền nước sạch cấp hồ & tráng xả', nhomChiPhi: 'van_hanh', soTienMacDinh: 2500000, ghiChu: 'Bổ sung hao hụt & vòi tắm tráng', isTinhKQKD: true, thuTu: 6 },
+    { tenChiPhi: 'Hóa chất Clo, PAC, pH xử lý nước hồ', nhomChiPhi: 'hoa_chat', soTienMacDinh: 2000000, ghiChu: 'Khử trùng nước đạt chuẩn y tế', isTinhKQKD: true, thuTu: 7 },
+    { tenChiPhi: 'Bảo trì máy bơm, robot hút cặn đáy hồ', nhomChiPhi: 'hoa_chat', soTienMacDinh: 1000000, ghiChu: 'Bảo dưỡng định kỳ thiết bị lọc', isTinhKQKD: true, thuTu: 8 },
+    { tenChiPhi: 'Dụng cụ dạy bơi (Phao tay, ván bơi, kính)', nhomChiPhi: 'marketing', soTienMacDinh: 500000, ghiChu: 'Hao mòn & bổ sung cụm phao tập', isTinhKQKD: true, thuTu: 9 },
+    { tenChiPhi: 'Quảng cáo Facebook & Tuyển sinh hè', nhomChiPhi: 'marketing', soTienMacDinh: 1500000, ghiChu: 'Ngân sách marketing khóa bơi kèm', isTinhKQKD: true, thuTu: 10 },
+    { tenChiPhi: 'Internet cáp quang, giấy in thẻ, mực in', nhomChiPhi: 'van_hanh', soTienMacDinh: 500000, ghiChu: 'Quầy lễ tân check-in', isTinhKQKD: true, thuTu: 11 },
+    { tenChiPhi: 'Thuốc men sơ cấp cứu & An toàn hồ', nhomChiPhi: 'chi_phi_khac', soTienMacDinh: 300000, ghiChu: 'Tủ thuốc y tế dự phòng', isTinhKQKD: true, thuTu: 12 }
+];
+
+// Helper format month cho input type="month"
+const formatMonthForInput = (date) => {
+    if (!date) return '';
+    const d = (date instanceof Date) ? date : date.toDate();
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    return `${year}-${month}`;
+};
+
+// Khởi tạo tab KQKD
+const setupKQKDTab = () => {
+    const now = new Date();
+    currentKqkdMonth = formatMonthForInput(now);
+
+    const filterMonthInput = document.getElementById('kqkd-filter-month');
+    if (filterMonthInput) {
+        filterMonthInput.value = currentKqkdMonth;
+    }
+
+    const filterFromInput = document.getElementById('kqkd-filter-from');
+    const filterToInput = document.getElementById('kqkd-filter-to');
+    if (filterFromInput && filterToInput) {
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        filterFromInput.value = formatDateForInput(firstDayOfMonth);
+        filterToInput.value = formatDateForInput(lastDayOfMonth);
+    }
+
+    // Đăng ký realtime listeners cho Chi Phí và Định Phí Mẫu
+    listenToChiPhi();
+    listenToDinhPhiMau();
+    setupKQKDEventListeners();
+};
+
+// Realtime listener cho chi_phi_thang
+const listenToChiPhi = () => {
+    if (unsubChiPhi) unsubChiPhi();
+    const q = query(collection(db, "chi_phi_thang"), orderBy("ngayTao", "desc"));
+    unsubChiPhi = onSnapshot(q, (snapshot) => {
+        globalChiPhiList = [];
+        snapshot.forEach((docSnap) => {
+            globalChiPhiList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        calculateAndRenderKQKD();
+    }, (error) => {
+        console.error("Lỗi realtime chi phí:", error);
+    });
+};
+
+// Realtime listener cho dinh_phi_mau
+const listenToDinhPhiMau = () => {
+    if (unsubDinhPhiMau) unsubDinhPhiMau();
+    const q = query(collection(db, "dinh_phi_mau"), orderBy("thuTu", "asc"));
+    unsubDinhPhiMau = onSnapshot(q, (snapshot) => {
+        globalDinhPhiMauList = [];
+        snapshot.forEach((docSnap) => {
+            globalDinhPhiMauList.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderTemplateListModal();
+    }, (error) => {
+        console.error("Lỗi realtime định phí mẫu:", error);
+    });
+};
+
+// Thiết lập các Event Listeners của Tab KQKD
+const setupKQKDEventListeners = () => {
+    // 1. Radio chọn chế độ thời gian
+    const modeRadios = document.querySelectorAll('input[name="kqkd-period-mode"]');
+    const monthContainer = document.getElementById('kqkd-month-container');
+    const customContainer = document.getElementById('kqkd-custom-range-container');
+
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            currentKqkdPeriodMode = e.target.value;
+            if (currentKqkdPeriodMode === 'month') {
+                if (monthContainer) monthContainer.classList.remove('hidden');
+                if (customContainer) customContainer.classList.add('hidden');
+            } else if (currentKqkdPeriodMode === 'custom') {
+                if (monthContainer) monthContainer.classList.add('hidden');
+                if (customContainer) customContainer.classList.remove('hidden');
+            } else { // 'all'
+                if (monthContainer) monthContainer.classList.add('hidden');
+                if (customContainer) customContainer.classList.add('hidden');
+            }
+            calculateAndRenderKQKD();
+        });
+    });
+
+    // 2. Nút Xem Báo Cáo
+    const viewBtn = document.getElementById('kqkd-view-btn');
+    if (viewBtn) {
+        viewBtn.addEventListener('click', () => {
+            calculateAndRenderKQKD();
+        });
+    }
+
+    // 3. Thay đổi tháng trực tiếp
+    const filterMonthInput = document.getElementById('kqkd-filter-month');
+    if (filterMonthInput) {
+        filterMonthInput.addEventListener('change', (e) => {
+            currentKqkdMonth = e.target.value;
+            calculateAndRenderKQKD();
+        });
+    }
+
+    // 4. Nút Áp Dụng Định Phí Mẫu vào kỳ hiện tại
+    const applyBtn = document.getElementById('kqkd-apply-template-btn');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', handleApplyDinhPhiMau);
+    }
+
+    // 5. Nút Mở Modal Thêm Chi Phí
+    const addExpenseBtn = document.getElementById('kqkd-add-expense-btn');
+    const addExpenseQuickBtn = document.getElementById('kqkd-add-expense-quick-btn');
+    if (addExpenseBtn) addExpenseBtn.addEventListener('click', () => openExpenseModal());
+    if (addExpenseQuickBtn) addExpenseQuickBtn.addEventListener('click', () => openExpenseModal());
+
+    // 6. Form Thêm / Sửa Chi Phí Submit
+    const expenseForm = document.getElementById('kqkd-expense-form');
+    if (expenseForm) {
+        expenseForm.addEventListener('submit', handleExpenseFormSubmit);
+    }
+
+    // Nút Huỷ modal chi phí
+    const cancelExpenseBtn = document.getElementById('kqkd-exp-cancel-btn');
+    if (cancelExpenseBtn) {
+        cancelExpenseBtn.addEventListener('click', () => closeExpenseModal());
+    }
+
+    // 7. Modal Định Phí Mẫu
+    const templateBtn = document.getElementById('kqkd-template-btn');
+    if (templateBtn) {
+        templateBtn.addEventListener('click', () => openTemplateModal());
+    }
+
+    const closeTemplateBtn = document.getElementById('kqkd-tpl-close-btn');
+    const closeTemplateX = document.getElementById('kqkd-tpl-close-x');
+    if (closeTemplateBtn) closeTemplateBtn.addEventListener('click', () => closeTemplateModal());
+    if (closeTemplateX) closeTemplateX.addEventListener('click', () => closeTemplateModal());
+
+    // Nút khởi tạo định phí mẫu mặc định nếu trống
+    const initDefaultTplBtn = document.getElementById('kqkd-tpl-init-default-btn');
+    if (initDefaultTplBtn) {
+        initDefaultTplBtn.addEventListener('click', handleInitDefaultDinhPhiMau);
+    }
+
+    // Nút thêm định phí mẫu mới
+    const addNewTplBtn = document.getElementById('kqkd-tpl-add-new-btn');
+    if (addNewTplBtn) {
+        addNewTplBtn.addEventListener('click', handleAddNewTemplatePrompt);
+    }
+
+    // 8. Nút Toggle All Checkbox trong sổ chi phí
+    const toggleAllBtn = document.getElementById('kqkd-toggle-all-check');
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', handleToggleAllExpensesInView);
+    }
+
+    // 9. Nút In Báo Cáo KQKD
+    const printBtn = document.getElementById('kqkd-print-btn');
+    if (printBtn) {
+        printBtn.addEventListener('click', handlePrintKQKD);
+    }
+
+    // 10. Nút Xuất Excel KQKD
+    const excelBtn = document.getElementById('kqkd-excel-btn');
+    if (excelBtn) {
+        excelBtn.addEventListener('click', handleExportExcelKQKD);
+    }
+};
+
+// =========================================================================
+// --- TÍNH TOÁN VÀ HIỂN THỊ KẾT QUẢ KINH DOANH (P&L) ---
+// =========================================================================
+
+const calculateAndRenderKQKD = () => {
+    // 1. Xác định phạm vi thời gian
+    let periodLabel = '';
+    let filteredStudents = [];
+    let filteredExpenses = [];
+
+    const monthInput = document.getElementById('kqkd-filter-month');
+    if (monthInput && monthInput.value) {
+        currentKqkdMonth = monthInput.value;
+    } else {
+        currentKqkdMonth = formatMonthForInput(new Date());
+    }
+
+    if (currentKqkdPeriodMode === 'month') {
+        const [yearStr, monthStr] = currentKqkdMonth.split('-');
+        const year = parseInt(yearStr);
+        const month = parseInt(monthStr) - 1;
+        const startDate = new Date(year, month, 1, 0, 0, 0, 0);
+        const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        periodLabel = `Tháng ${monthStr}/${yearStr}`;
+
+        // Lọc học viên trong tháng
+        filteredStudents = globalHocVienList.filter(hv => {
+            if (!hv.ngayGhiDanh) return false;
+            const d = hv.ngayGhiDanh.toDate();
+            return d >= startDate && d <= endDate;
+        });
+
+        // Lọc chi phí có thangNam trùng khớp
+        filteredExpenses = globalChiPhiList.filter(cp => cp.thangNam === currentKqkdMonth);
+
+    } else if (currentKqkdPeriodMode === 'custom') {
+        const fromInput = document.getElementById('kqkd-filter-from');
+        const toInput = document.getElementById('kqkd-filter-to');
+        const startDate = fromInput && fromInput.value ? new Date(`${fromInput.value}T00:00:00`) : new Date(2000, 0, 1);
+        const endDate = toInput && toInput.value ? new Date(`${toInput.value}T23:59:59`) : new Date(2100, 11, 31);
+        periodLabel = `Từ ${formatDateForDisplay(startDate)} đến ${formatDateForDisplay(endDate)}`;
+
+        // Lọc học viên trong khoảng ngày
+        filteredStudents = globalHocVienList.filter(hv => {
+            if (!hv.ngayGhiDanh) return false;
+            const d = hv.ngayGhiDanh.toDate();
+            return d >= startDate && d <= endDate;
+        });
+
+        // Lọc chi phí trong khoảng ngày
+        filteredExpenses = globalChiPhiList.filter(cp => {
+            if (cp.ngayChi) {
+                const d = (cp.ngayChi instanceof Timestamp) ? cp.ngayChi.toDate() : new Date(cp.ngayChi);
+                return d >= startDate && d <= endDate;
+            }
+            if (cp.thangNam) {
+                const [y, m] = cp.thangNam.split('-');
+                const cpDate = new Date(parseInt(y), parseInt(m) - 1, 15);
+                return cpDate >= startDate && cpDate <= endDate;
+            }
+            return false;
+        });
+
+    } else { // 'all' - Toàn bộ thời gian
+        periodLabel = 'Toàn Bộ Thời Gian (Lũy Kế)';
+        filteredStudents = [...globalHocVienList];
+        filteredExpenses = [...globalChiPhiList];
+    }
+
+    // 2. Tính toán Doanh thu, Hoa hồng HLV, Lợi nhuận gộp
+    let totalRevenue = 0;
+    let totalHlvCost = 0;
+    let totalGrossProfit = 0;
+
+    filteredStudents.forEach(hv => {
+        totalRevenue += (hv.hocPhi || 0);
+        totalHlvCost += (hv.tongHoaHong || 0);
+        totalGrossProfit += (hv.hbaNhan || 0);
+    });
+
+    // 3. Phân tách và tổng hợp Chi phí
+    let totalActiveExpense = 0;
+    let activeExpenseCount = 0;
+    const expenseByGroup = {
+        mat_bang: 0,
+        nhan_su: 0,
+        van_hanh: 0,
+        hoa_chat: 0,
+        marketing: 0,
+        chi_phi_khac: 0
+    };
+
+    filteredExpenses.forEach(cp => {
+        const isActive = cp.isTinhKQKD !== false;
+        const amount = Number(cp.soTien) || 0;
+        if (isActive) {
+            totalActiveExpense += amount;
+            activeExpenseCount++;
+            const grp = cp.nhomChiPhi || 'chi_phi_khac';
+            if (expenseByGroup[grp] !== undefined) {
+                expenseByGroup[grp] += amount;
+            } else {
+                expenseByGroup.chi_phi_khac += amount;
+            }
+        }
+    });
+
+    // 4. Tính toán Lợi nhuận ròng (Net Profit)
+    const netProfit = totalGrossProfit - totalActiveExpense;
+    const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
+
+    // 5. Phân tích Điểm hòa vốn
+    const hbaRateDecimal = globalRateHBA > 0 ? (globalRateHBA / 100) : 0.3; // Mặc định 30% nếu chưa đặt
+    const breakEvenRevenue = hbaRateDecimal > 0 ? Math.round(totalActiveExpense / hbaRateDecimal) : 0;
+    const avgHocPhi = filteredStudents.length > 0 ? Math.round(totalRevenue / filteredStudents.length) : 1500000;
+    const breakEvenStudents = avgHocPhi > 0 ? Math.ceil(breakEvenRevenue / avgHocPhi) : 0;
+
+    // Lưu dữ liệu tổng kết để In / Excel
+    currentKqkdSummaryData = {
+        periodLabel,
+        totalRevenue,
+        studentCount: filteredStudents.length,
+        totalHlvCost,
+        totalGrossProfit,
+        totalActiveExpense,
+        activeExpenseCount,
+        expenseByGroup,
+        netProfit,
+        profitMargin,
+        breakEvenRevenue,
+        avgHocPhi,
+        breakEvenStudents,
+        filteredExpenses,
+        filteredStudents
+    };
+
+    // 6. Cập nhật giao diện các Thẻ KPI
+    updateKpiCards(currentKqkdSummaryData);
+
+    // 7. Cập nhật Bảng P&L
+    renderPnlTable(currentKqkdSummaryData);
+
+    // 8. Cập nhật Bảng Sổ Chi Phí
+    renderExpenseTable(filteredExpenses);
+};
+
+// Cập nhật các thẻ KPI
+const updateKpiCards = (data) => {
+    const kpiDoanhThu = document.getElementById('kpi-doanh-thu');
+    const kpiSoHv = document.getElementById('kpi-so-hv');
+    const kpiHlvCost = document.getElementById('kpi-hlv-cost');
+    const kpiHlvRate = document.getElementById('kpi-hlv-rate');
+    const kpiLoiNhuanGop = document.getElementById('kpi-loi-nhuan-gop');
+    const kpiHbaRate = document.getElementById('kpi-hba-rate');
+    const kpiTongChiPhi = document.getElementById('kpi-tong-chi-phi');
+    const kpiChiPhiCount = document.getElementById('kpi-chi-phi-count');
+    const kpiLoiNhuanRong = document.getElementById('kpi-loi-nhuan-rong');
+    const kpiBadgeProfit = document.getElementById('kpi-badge-profit');
+    const kpiProfitMargin = document.getElementById('kpi-profit-margin');
+    const kpiDiemHoaVon = document.getElementById('kpi-diem-hoa-von');
+    const kpiHvHoaVon = document.getElementById('kpi-hv-hoa-von');
+    const kpiCardNetProfit = document.getElementById('kpi-card-net-profit');
+    const pnlPeriodLabel = document.getElementById('pnl-period-label');
+
+    if (pnlPeriodLabel) pnlPeriodLabel.textContent = data.periodLabel;
+    if (kpiDoanhThu) kpiDoanhThu.textContent = `${formatCurrency(data.totalRevenue)} đ`;
+    if (kpiSoHv) kpiSoHv.textContent = `${data.studentCount} học viên mới`;
+
+    if (kpiHlvCost) kpiHlvCost.textContent = `${formatCurrency(data.totalHlvCost)} đ`;
+    const hlvRatePct = data.totalRevenue > 0 ? ((data.totalHlvCost / data.totalRevenue) * 100).toFixed(1) : (100 - globalRateHBA);
+    if (kpiHlvRate) kpiHlvRate.textContent = `${hlvRatePct}% Doanh thu`;
+
+    if (kpiLoiNhuanGop) kpiLoiNhuanGop.textContent = `${formatCurrency(data.totalGrossProfit)} đ`;
+    const hbaRatePct = data.totalRevenue > 0 ? ((data.totalGrossProfit / data.totalRevenue) * 100).toFixed(1) : globalRateHBA;
+    if (kpiHbaRate) kpiHbaRate.textContent = `HBA giữ lại ${hbaRatePct}%`;
+
+    if (kpiTongChiPhi) kpiTongChiPhi.textContent = `${formatCurrency(data.totalActiveExpense)} đ`;
+    if (kpiChiPhiCount) kpiChiPhiCount.textContent = `${data.activeExpenseCount} khoản chi hợp lệ`;
+
+    if (kpiLoiNhuanRong) kpiLoiNhuanRong.textContent = `${formatCurrency(data.netProfit)} đ`;
+    if (kpiProfitMargin) kpiProfitMargin.textContent = `Biên LN: ${data.profitMargin}%`;
+
+    if (kpiDiemHoaVon) kpiDiemHoaVon.textContent = `${formatCurrency(data.breakEvenRevenue)} đ`;
+    if (kpiHvHoaVon) kpiHvHoaVon.textContent = `Cần tối thiểu: ~${data.breakEvenStudents} HV`;
+
+    // Đổi màu sắc thẻ Lợi nhuận ròng tùy Lãi / Lỗ
+    if (kpiCardNetProfit && kpiBadgeProfit) {
+        if (data.netProfit >= 0) {
+            kpiCardNetProfit.className = 'bg-emerald-50 border border-emerald-200 p-4 rounded-xl shadow-sm';
+            kpiBadgeProfit.className = 'px-2 py-0.5 rounded text-xs font-bold bg-emerald-200 text-emerald-800';
+            kpiBadgeProfit.textContent = 'LÃI';
+            if (kpiLoiNhuanRong) kpiLoiNhuanRong.className = 'block text-xl font-bold text-emerald-900 mt-1';
+        } else {
+            kpiCardNetProfit.className = 'bg-rose-50 border border-rose-200 p-4 rounded-xl shadow-sm';
+            kpiBadgeProfit.className = 'px-2 py-0.5 rounded text-xs font-bold bg-rose-200 text-rose-800';
+            kpiBadgeProfit.textContent = 'LỖ';
+            if (kpiLoiNhuanRong) kpiLoiNhuanRong.className = 'block text-xl font-bold text-rose-900 mt-1';
+        }
+    }
+};
+
+// Render Bảng P&L
+const renderPnlTable = (data) => {
+    const tbody = document.getElementById('pnl-table-body');
+    if (!tbody) return;
+
+    const rev = data.totalRevenue || 0;
+    const calcPct = (val) => rev > 0 ? `${((val / rev) * 100).toFixed(1)}%` : '0.0%';
+
+    const html = `
+        <!-- 1. DOANH THU THUẦN -->
+        <tr class="bg-blue-50/60 font-bold text-gray-900">
+            <td class="py-2.5 px-3">1. DOANH THU THUẦN (Học phí)</td>
+            <td class="py-2.5 px-3 text-right text-blue-700">${formatCurrency(data.totalRevenue)} đ</td>
+            <td class="py-2.5 px-3 text-right text-blue-700">100.0%</td>
+        </tr>
+
+        <!-- 2. CHI PHÍ TRỰC TIẾP -->
+        <tr class="text-gray-700">
+            <td class="py-2 px-3 pl-6">(-) Chi phí HLV (Hoa hồng ca dạy)</td>
+            <td class="py-2 px-3 text-right text-amber-700">${formatCurrency(data.totalHlvCost)} đ</td>
+            <td class="py-2 px-3 text-right text-gray-500">${calcPct(data.totalHlvCost)}</td>
+        </tr>
+
+        <!-- = LỢI NHUẬN GỘP -->
+        <tr class="bg-indigo-50/70 font-bold text-indigo-950 border-t border-b border-indigo-100">
+            <td class="py-2.5 px-3">(=) LỢI NHUẬN GỘP (HBA Nhận)</td>
+            <td class="py-2.5 px-3 text-right text-indigo-700">${formatCurrency(data.totalGrossProfit)} đ</td>
+            <td class="py-2.5 px-3 text-right text-indigo-700">${calcPct(data.totalGrossProfit)}</td>
+        </tr>
+
+        <!-- 3. TỔNG CHI PHÍ CỐ ĐỊNH & VẬN HÀNH -->
+        <tr class="bg-rose-50/40 font-bold text-gray-800">
+            <td class="py-2.5 px-3">2. CHI PHÍ CỐ ĐỊNH & KHÁC (Đang tính)</td>
+            <td class="py-2.5 px-3 text-right text-rose-700">${formatCurrency(data.totalActiveExpense)} đ</td>
+            <td class="py-2.5 px-3 text-right text-rose-700">${calcPct(data.totalActiveExpense)}</td>
+        </tr>
+
+        <!-- Chi tiết các nhóm chi phí -->
+        <tr class="text-xs text-gray-600">
+            <td class="py-1.5 px-3 pl-6">• Mặt bằng & Thuê hồ bơi</td>
+            <td class="py-1.5 px-3 text-right">${formatCurrency(data.expenseByGroup.mat_bang)} đ</td>
+            <td class="py-1.5 px-3 text-right text-gray-400">${calcPct(data.expenseByGroup.mat_bang)}</td>
+        </tr>
+        <tr class="text-xs text-gray-600">
+            <td class="py-1.5 px-3 pl-6">• Lương nhân sự (Lễ tân, cứu hộ, tạp vụ)</td>
+            <td class="py-1.5 px-3 text-right">${formatCurrency(data.expenseByGroup.nhan_su)} đ</td>
+            <td class="py-1.5 px-3 text-right text-gray-400">${calcPct(data.expenseByGroup.nhan_su)}</td>
+        </tr>
+        <tr class="text-xs text-gray-600">
+            <td class="py-1.5 px-3 pl-6">• Tiện ích (Điện, nước, internet)</td>
+            <td class="py-1.5 px-3 text-right">${formatCurrency(data.expenseByGroup.van_hanh)} đ</td>
+            <td class="py-1.5 px-3 text-right text-gray-400">${calcPct(data.expenseByGroup.van_hanh)}</td>
+        </tr>
+        <tr class="text-xs text-gray-600">
+            <td class="py-1.5 px-3 pl-6">• Hóa chất & Bảo trì thiết bị</td>
+            <td class="py-1.5 px-3 text-right">${formatCurrency(data.expenseByGroup.hoa_chat)} đ</td>
+            <td class="py-1.5 px-3 text-right text-gray-400">${calcPct(data.expenseByGroup.hoa_chat)}</td>
+        </tr>
+        <tr class="text-xs text-gray-600">
+            <td class="py-1.5 px-3 pl-6">• Marketing & Dụng cụ dạy bơi</td>
+            <td class="py-1.5 px-3 text-right">${formatCurrency(data.expenseByGroup.marketing)} đ</td>
+            <td class="py-1.5 px-3 text-right text-gray-400">${calcPct(data.expenseByGroup.marketing)}</td>
+        </tr>
+        <tr class="text-xs text-gray-600">
+            <td class="py-1.5 px-3 pl-6">• Chi phí khác (Tùy biến)</td>
+            <td class="py-1.5 px-3 text-right">${formatCurrency(data.expenseByGroup.chi_phi_khac)} đ</td>
+            <td class="py-1.5 px-3 text-right text-gray-400">${calcPct(data.expenseByGroup.chi_phi_khac)}</td>
+        </tr>
+
+        <!-- = LỢI NHUẬN RÒNG -->
+        <tr class="${data.netProfit >= 0 ? 'bg-emerald-100 text-emerald-950' : 'bg-rose-100 text-rose-950'} font-bold text-base border-t-2 border-gray-300">
+            <td class="py-3 px-3">(=) LỢI NHUẬN RÒNG (EBITDA)</td>
+            <td class="py-3 px-3 text-right ${data.netProfit >= 0 ? 'text-emerald-800' : 'text-rose-800'}">${formatCurrency(data.netProfit)} đ</td>
+            <td class="py-3 px-3 text-right ${data.netProfit >= 0 ? 'text-emerald-800' : 'text-rose-800'}">${data.profitMargin}%</td>
+        </tr>
+
+        <!-- CHỈ SỐ HÒA VỐN -->
+        <tr class="bg-gray-50 text-xs text-gray-600 font-medium">
+            <td class="py-2 px-3 italic">Doanh thu cần đạt để Hòa Vốn:</td>
+            <td colspan="2" class="py-2 px-3 text-right font-bold text-purple-700">${formatCurrency(data.breakEvenRevenue)} đ (~ ${data.breakEvenStudents} học viên)</td>
+        </tr>
+    `;
+
+    tbody.innerHTML = html;
+};
+
+// Render Bảng Sổ Chi Phí & Checkbox tương tác trực tiếp
+const renderExpenseTable = (expenses) => {
+    const tbody = document.getElementById('expense-table-body');
+    const badge = document.getElementById('expense-count-badge');
+    if (!tbody) return;
+
+    if (badge) badge.textContent = `${expenses.length} khoản`;
+
+    if (expenses.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="py-8 text-center text-gray-500">
+                    <p class="mb-3">Chưa có khoản chi nào trong kỳ hạch toán này.</p>
+                    <button onclick="window.handleQuickApplyTemplate()" class="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-semibold py-2 px-4 rounded-lg text-xs transition-colors">
+                        ⚡ Bấm vào đây để Áp Dụng Định Phí Mẫu Ngay
+                    </button>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    expenses.forEach((cp) => {
+        const isActive = cp.isTinhKQKD !== false;
+        const grp = EXPENSE_GROUPS[cp.nhomChiPhi] || EXPENSE_GROUPS.chi_phi_khac;
+        const ngayChiStr = cp.ngayChi ? formatDateForDisplay(cp.ngayChi) : (cp.thangNam || 'N/A');
+
+        html += `
+            <tr class="hover:bg-gray-50 transition-colors ${!isActive ? 'opacity-50 bg-gray-50' : ''}">
+                <td class="py-2.5 px-3 text-center">
+                    <input type="checkbox" ${isActive ? 'checked' : ''} 
+                           onchange="window.handleToggleExpense('${cp.id}', ${isActive})" 
+                           class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 rounded border-gray-300 cursor-pointer"
+                           title="${isActive ? 'Đang tính vào KQKD (Click để bỏ tính)' : 'Đang tạm dừng tính (Click để bật tính)'}">
+                </td>
+                <td class="py-2.5 px-3">
+                    <div class="font-medium text-gray-900 ${!isActive ? 'line-through text-gray-400' : ''}">${cp.tenChiPhi}</div>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded ${grp.badgeClass}">
+                            ${grp.label}
+                        </span>
+                        ${cp.ghiChu ? `<span class="text-xs text-gray-400 truncate max-w-[200px]" title="${cp.ghiChu}">• ${cp.ghiChu}</span>` : ''}
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 text-right font-bold ${isActive ? 'text-rose-700' : 'text-gray-400 line-through'}">
+                    ${formatCurrency(cp.soTien)} đ
+                </td>
+                <td class="py-2.5 px-3 text-center text-xs text-gray-500 whitespace-nowrap">
+                    ${ngayChiStr}
+                </td>
+                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                    <button onclick="window.handleEditExpense('${cp.id}')" class="text-indigo-600 hover:text-indigo-900 p-1 mr-1" title="Sửa">
+                        ✏️
+                    </button>
+                    <button onclick="window.handleDeleteExpense('${cp.id}', '${cp.tenChiPhi.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 p-1" title="Xóa">
+                        🗑️
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+};
+
+// =========================================================================
+// --- THAO TÁC SỔ CHI PHÍ (CRUD & CHECKBOX TOGGLE) ---
+// =========================================================================
+
+// Bật/tắt Checkbox tính KQKD
+window.handleToggleExpense = async (expenseId, currentStatus) => {
+    try {
+        const newStatus = !currentStatus;
+        await updateDoc(doc(db, "chi_phi_thang", expenseId), {
+            isTinhKQKD: newStatus
+        });
+    } catch (error) {
+        showModal(`Lỗi cập nhật trạng thái chi phí: ${error.message}`, "Lỗi");
+    }
+};
+
+// Bật tất cả / Bỏ chọn tất cả chi phí trong kỳ đang xem
+const handleToggleAllExpensesInView = async () => {
+    if (!currentKqkdSummaryData || !currentKqkdSummaryData.filteredExpenses || currentKqkdSummaryData.filteredExpenses.length === 0) {
+        showModal("Không có khoản chi nào trong kỳ này.", "Thông báo");
+        return;
+    }
+
+    const expenses = currentKqkdSummaryData.filteredExpenses;
+    const hasInactive = expenses.some(cp => cp.isTinhKQKD === false);
+    const targetStatus = hasInactive; // Nếu có mục chưa tick thì tick hết, ngược lại bỏ tick hết
+
+    try {
+        const batch = writeBatch(db);
+        expenses.forEach(cp => {
+            const docRef = doc(db, "chi_phi_thang", cp.id);
+            batch.update(docRef, { isTinhKQKD: targetStatus });
+        });
+        await batch.commit();
+        showModal(`Đã ${targetStatus ? 'BẬT' : 'TẮT'} tính vào KQKD cho ${expenses.length} khoản chi.`, "Thành công");
+    } catch (error) {
+        showModal(`Lỗi cập nhật hàng loạt: ${error.message}`, "Lỗi");
+    }
+};
+
+// Mở modal Thêm/Sửa Chi Phí
+const openExpenseModal = (expenseData = null) => {
+    const modal = document.getElementById('kqkd-expense-modal');
+    const form = document.getElementById('kqkd-expense-form');
+    const title = document.getElementById('kqkd-exp-modal-title');
+    if (!modal || !form) return;
+
+    form.reset();
+    currentEditingExpenseId = expenseData ? expenseData.id : null;
+
+    if (expenseData) {
+        if (title) title.innerHTML = '<span>✏️</span> <span>Sửa Khoản Chi Phí</span>';
+        document.getElementById('kqkd-exp-id').value = expenseData.id;
+        document.getElementById('kqkd-exp-name').value = expenseData.tenChiPhi || '';
+        document.getElementById('kqkd-exp-group').value = expenseData.nhomChiPhi || 'mat_bang';
+        document.getElementById('kqkd-exp-amount').value = expenseData.soTien || 0;
+        document.getElementById('kqkd-exp-month').value = expenseData.thangNam || currentKqkdMonth;
+        
+        if (expenseData.ngayChi) {
+            const d = (expenseData.ngayChi instanceof Timestamp) ? expenseData.ngayChi.toDate() : new Date(expenseData.ngayChi);
+            document.getElementById('kqkd-exp-date').value = formatDateForInput(d);
+        } else {
+            document.getElementById('kqkd-exp-date').value = formatDateForInput(new Date());
+        }
+
+        document.getElementById('kqkd-exp-active').checked = expenseData.isTinhKQKD !== false;
+        document.getElementById('kqkd-exp-note').value = expenseData.ghiChu || '';
+    } else {
+        if (title) title.innerHTML = '<span>➕</span> <span>Thêm Khoản Chi Phí</span>';
+        document.getElementById('kqkd-exp-id').value = '';
+        document.getElementById('kqkd-exp-month').value = currentKqkdMonth || formatMonthForInput(new Date());
+        document.getElementById('kqkd-exp-date').value = formatDateForInput(new Date());
+        document.getElementById('kqkd-exp-active').checked = true;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+};
+
+const closeExpenseModal = () => {
+    const modal = document.getElementById('kqkd-expense-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+    currentEditingExpenseId = null;
+};
+
+// Submit form Thêm / Sửa Chi Phí
+const handleExpenseFormSubmit = async (e) => {
+    e.preventDefault();
+    const saveBtn = document.getElementById('kqkd-exp-save-btn');
+    const spinner = document.getElementById('kqkd-exp-spinner');
+
+    if (saveBtn) saveBtn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+
+    try {
+        const id = document.getElementById('kqkd-exp-id').value;
+        const tenChiPhi = document.getElementById('kqkd-exp-name').value.trim();
+        const nhomChiPhi = document.getElementById('kqkd-exp-group').value;
+        const soTien = Number(document.getElementById('kqkd-exp-amount').value) || 0;
+        const thangNam = document.getElementById('kqkd-exp-month').value;
+        const ngayChiStr = document.getElementById('kqkd-exp-date').value;
+        const isTinhKQKD = document.getElementById('kqkd-exp-active').checked;
+        const ghiChu = document.getElementById('kqkd-exp-note').value.trim();
+
+        if (!tenChiPhi) throw new Error("Vui lòng nhập tên khoản chi.");
+        if (soTien < 0) throw new Error("Số tiền không hợp lệ.");
+
+        const payload = {
+            tenChiPhi,
+            nhomChiPhi,
+            soTien,
+            thangNam,
+            isTinhKQKD,
+            ghiChu,
+            ngayChi: ngayChiStr ? Timestamp.fromDate(new Date(`${ngayChiStr}T12:00:00`)) : Timestamp.now(),
+            nguoiTaoEmail: currentUser ? currentUser.email : 'admin',
+            ngayCapNhat: Timestamp.now()
+        };
+
+        if (id) {
+            await updateDoc(doc(db, "chi_phi_thang", id), payload);
+            showModal(`Đã cập nhật khoản chi "${tenChiPhi}".`, "Thành công");
+        } else {
+            payload.ngayTao = Timestamp.now();
+            await addDoc(collection(db, "chi_phi_thang"), payload);
+            showModal(`Đã thêm khoản chi "${tenChiPhi}".`, "Thành công");
+        }
+
+        closeExpenseModal();
+    } catch (error) {
+        showModal(`Lỗi lưu chi phí: ${error.message}`, "Lỗi");
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
+    }
+};
+
+// Sửa khoản chi từ bảng
+window.handleEditExpense = (expenseId) => {
+    const cp = globalChiPhiList.find(c => c.id === expenseId);
+    if (cp) {
+        openExpenseModal(cp);
+    }
+};
+
+// Xoá khoản chi
+window.handleDeleteExpense = async (expenseId, expenseName) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa khoản chi "${expenseName}"?`)) return;
+
+    try {
+        await deleteDoc(doc(db, "chi_phi_thang", expenseId));
+        showModal(`Đã xóa khoản chi "${expenseName}".`, "Thành công");
+    } catch (error) {
+        showModal(`Lỗi xóa chi phí: ${error.message}`, "Lỗi");
+    }
+};
+
+// =========================================================================
+// --- ĐỊNH PHÍ MẪU & ÁP DỤNG ĐỊNH PHÍ ---
+// =========================================================================
+
+// Nạp nhanh định phí mẫu từ banner khi bảng trống
+window.handleQuickApplyTemplate = () => {
+    handleApplyDinhPhiMau();
+};
+
+// Áp dụng định phí mẫu sang kỳ đang xem
+const handleApplyDinhPhiMau = async () => {
+    if (globalDinhPhiMauList.length === 0) {
+        const confirmInit = confirm("Chưa có danh mục định phí mẫu nào trong hệ thống.\nBạn có muốn tự động nạp 12 chi phí mẫu chuẩn của Hồ bơi Q6 ngay bây giờ không?");
+        if (confirmInit) {
+            await handleInitDefaultDinhPhiMau();
+        } else {
+            return;
+        }
+    }
+
+    const targetMonth = currentKqkdMonth || formatMonthForInput(new Date());
+    const activeTemplates = globalDinhPhiMauList.filter(t => t.isTinhKQKD !== false);
+
+    if (activeTemplates.length === 0) {
+        showModal("Không có định phí mẫu nào đang ở trạng thái kích hoạt.", "Thông báo");
+        return;
+    }
+
+    const confirmApply = confirm(`Hệ thống sẽ sao chép ${activeTemplates.length} khoản định phí mẫu vào tháng [${targetMonth}].\nBạn có muốn tiếp tục?`);
+    if (!confirmApply) return;
+
+    try {
+        const batch = writeBatch(db);
+        const [y, m] = targetMonth.split('-');
+        const defaultDate = new Date(parseInt(y), parseInt(m) - 1, 1, 12, 0, 0);
+
+        activeTemplates.forEach((tpl) => {
+            const newDocRef = doc(collection(db, "chi_phi_thang"));
+            batch.set(newDocRef, {
+                tenChiPhi: tpl.tenChiPhi,
+                nhomChiPhi: tpl.nhomChiPhi || 'mat_bang',
+                soTien: Number(tpl.soTienMacDinh) || 0,
+                thangNam: targetMonth,
+                isTinhKQKD: true,
+                ghiChu: tpl.ghiChu || 'Định phí hàng tháng',
+                ngayChi: Timestamp.fromDate(defaultDate),
+                nguoiTaoEmail: currentUser ? currentUser.email : 'admin',
+                ngayTao: Timestamp.now()
+            });
+        });
+
+        await batch.commit();
+        showModal(`Đã áp dụng thành công ${activeTemplates.length} khoản định phí vào tháng ${targetMonth}.`, "Thành công");
+    } catch (error) {
+        showModal(`Lỗi áp dụng định phí: ${error.message}`, "Lỗi");
+    }
+};
+
+// Khởi tạo 12 định phí mẫu chuẩn cho Hồ bơi Q6
+const handleInitDefaultDinhPhiMau = async () => {
+    try {
+        const batch = writeBatch(db);
+        DEFAULT_DINH_PHI_MAU.forEach((item) => {
+            const newDocRef = doc(collection(db, "dinh_phi_mau"));
+            batch.set(newDocRef, {
+                ...item,
+                ngayTao: Timestamp.now()
+            });
+        });
+        await batch.commit();
+        showModal("Đã khởi tạo thành công 12 danh mục chi phí định kỳ chuẩn của Hồ bơi Q6!", "Thành công");
+    } catch (error) {
+        showModal(`Lỗi khởi tạo định phí mẫu: ${error.message}`, "Lỗi");
+    }
+};
+
+// Mở modal Định Phí Mẫu
+const openTemplateModal = () => {
+    const modal = document.getElementById('kqkd-template-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    renderTemplateListModal();
+};
+
+const closeTemplateModal = () => {
+    const modal = document.getElementById('kqkd-template-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+};
+
+// Render bảng danh mục định phí mẫu trong modal
+const renderTemplateListModal = () => {
+    const tbody = document.getElementById('tpl-table-body');
+    if (!tbody) return;
+
+    if (globalDinhPhiMauList.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="py-6 text-center text-gray-500">
+                    Danh mục định phí mẫu đang trống. Bấm nút <strong>"Nạp Danh Mục Gợi Ý Hồ Bơi Q6"</strong> ở trên để tạo nhanh.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    globalDinhPhiMauList.forEach((tpl) => {
+        const isActive = tpl.isTinhKQKD !== false;
+        const grp = EXPENSE_GROUPS[tpl.nhomChiPhi] || EXPENSE_GROUPS.chi_phi_khac;
+
+        html += `
+            <tr class="hover:bg-gray-50">
+                <td class="py-2.5 px-3 text-center">
+                    <input type="checkbox" ${isActive ? 'checked' : ''} 
+                           onchange="window.handleToggleTemplateActive('${tpl.id}', ${isActive})" 
+                           class="w-4 h-4 text-purple-600 focus:ring-purple-500 rounded border-gray-300 cursor-pointer"
+                           title="${isActive ? 'Đang bật mặc định' : 'Đang tắt mặc định'}">
+                </td>
+                <td class="py-2.5 px-3">
+                    <div class="font-medium text-gray-900 ${!isActive ? 'text-gray-400 line-through' : ''}">${tpl.tenChiPhi}</div>
+                    <span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded ${grp.badgeClass} mt-0.5">
+                        ${grp.label}
+                    </span>
+                </td>
+                <td class="py-2.5 px-3 text-right font-bold text-gray-800">
+                    ${formatCurrency(tpl.soTienMacDinh)} đ
+                </td>
+                <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                    <button onclick="window.handleEditTemplateAmount('${tpl.id}', ${tpl.soTienMacDinh})" class="text-indigo-600 hover:text-indigo-900 p-1 mr-1" title="Sửa số tiền">
+                        ✏️
+                    </button>
+                    <button onclick="window.handleDeleteTemplate('${tpl.id}', '${tpl.tenChiPhi.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 p-1" title="Xóa">
+                        🗑️
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+};
+
+// Bật/tắt mặc định template
+window.handleToggleTemplateActive = async (templateId, currentStatus) => {
+    try {
+        await updateDoc(doc(db, "dinh_phi_mau", templateId), {
+            isTinhKQKD: !currentStatus
+        });
+    } catch (error) {
+        showModal(`Lỗi cập nhật định phí mẫu: ${error.message}`, "Lỗi");
+    }
+};
+
+// Sửa số tiền mặc định của định phí mẫu
+window.handleEditTemplateAmount = async (templateId, currentAmount) => {
+    const newAmountStr = prompt("Nhập số tiền mặc định mới (VNĐ):", currentAmount);
+    if (newAmountStr === null) return;
+    const newAmount = Number(newAmountStr);
+    if (isNaN(newAmount) || newAmount < 0) {
+        showModal("Số tiền không hợp lệ.", "Lỗi");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "dinh_phi_mau", templateId), {
+            soTienMacDinh: newAmount
+        });
+        showModal("Đã cập nhật số tiền định phí mẫu.", "Thành công");
+    } catch (error) {
+        showModal(`Lỗi cập nhật: ${error.message}`, "Lỗi");
+    }
+};
+
+// Xóa định phí mẫu
+window.handleDeleteTemplate = async (templateId, templateName) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa định phí mẫu "${templateName}"?`)) return;
+    try {
+        await deleteDoc(doc(db, "dinh_phi_mau", templateId));
+        showModal(`Đã xóa "${templateName}".`, "Thành công");
+    } catch (error) {
+        showModal(`Lỗi xóa: ${error.message}`, "Lỗi");
+    }
+};
+
+// Thêm định phí mẫu mới
+const handleAddNewTemplatePrompt = async () => {
+    const tenChiPhi = prompt("Nhập tên khoản chi phí mẫu mới:");
+    if (!tenChiPhi || !tenChiPhi.trim()) return;
+
+    const soTienStr = prompt("Nhập số tiền mặc định hàng tháng (VNĐ):", "1000000");
+    if (soTienStr === null) return;
+    const soTienMacDinh = Number(soTienStr) || 0;
+
+    try {
+        await addDoc(collection(db, "dinh_phi_mau"), {
+            tenChiPhi: tenChiPhi.trim(),
+            nhomChiPhi: 'chi_phi_khac',
+            soTienMacDinh: soTienMacDinh,
+            isTinhKQKD: true,
+            isCustom: true,
+            thuTu: globalDinhPhiMauList.length + 1,
+            ngayTao: Timestamp.now()
+        });
+        showModal(`Đã thêm định phí mẫu "${tenChiPhi}".`, "Thành công");
+    } catch (error) {
+        showModal(`Lỗi thêm định phí mẫu: ${error.message}`, "Lỗi");
+    }
+};
+
+// =========================================================================
+// --- IN BÁO CÁO KQKD & XUẤT EXCEL TÀI CHÍNH ---
+// =========================================================================
+
+// In Báo Cáo KQKD (Khổ A4 chuẩn)
+const handlePrintKQKD = () => {
+    if (!currentKqkdSummaryData) {
+        showModal("Chưa có dữ liệu báo cáo để in.", "Lỗi");
+        return;
+    }
+
+    const data = currentKqkdSummaryData;
+    const printSection = document.getElementById('print-section');
+    if (!printSection) return;
+
+    let expenseRowsHtml = '';
+    data.filteredExpenses.forEach((cp, idx) => {
+        const isActive = cp.isTinhKQKD !== false;
+        const grp = EXPENSE_GROUPS[cp.nhomChiPhi] || EXPENSE_GROUPS.chi_phi_khac;
+        expenseRowsHtml += `
+            <tr style="border-bottom: 1px solid #ddd; ${!isActive ? 'text-decoration: line-through; color: #999;' : ''}">
+                <td style="padding: 6px; text-align: center;">${idx + 1}</td>
+                <td style="padding: 6px;">${cp.tenChiPhi}</td>
+                <td style="padding: 6px; font-size: 11px;">${grp.label}</td>
+                <td style="padding: 6px; text-align: right; font-weight: bold;">${formatCurrency(cp.soTien)} đ</td>
+                <td style="padding: 6px; text-align: center;">${isActive ? 'Có tính' : 'Không tính'}</td>
+            </tr>
+        `;
+    });
+
+    const printHtml = `
+        <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000; max-width: 800px; margin: auto;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; text-transform: uppercase; font-weight: bold;">TRUNG TÂM DẠY BƠI HBA - HỒ BƠI QUẬN 6</h3>
+                    <p style="margin: 2px 0 0 0; font-size: 13px;">Địa chỉ: Hồ bơi Phú Lâm, Quận 6, TP.HCM</p>
+                </div>
+                <div style="text-align: right; font-size: 13px;">
+                    <p style="margin: 0;">Ngày in: ${formatDateForDisplay(new Date())}</p>
+                    <p style="margin: 2px 0 0 0;">Người lập: ${currentUser ? currentUser.email : 'Admin'}</p>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (P&L)</h1>
+                <p style="margin: 5px 0 0 0; font-size: 15px; font-weight: bold; font-style: italic;">Kỳ hạch toán: ${data.periodLabel}</p>
+            </div>
+
+            <!-- Bảng P&L Tổng hợp -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2; border: 1px solid #333;">
+                        <th style="padding: 8px; text-align: left; border: 1px solid #333;">CHỈ TIÊU HẠCH TOÁN</th>
+                        <th style="padding: 8px; text-align: right; border: 1px solid #333; width: 180px;">SỐ TIỀN (VNĐ)</th>
+                        <th style="padding: 8px; text-align: right; border: 1px solid #333; width: 110px;">% DOANH THU</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="font-weight: bold; background-color: #f9f9f9;">
+                        <td style="padding: 8px; border: 1px solid #333;">1. DOANH THU THUẦN (Học phí ghi danh - ${data.studentCount} HV)</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.totalRevenue)} đ</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">100.0%</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #333; padding-left: 20px;">(-) Chi phí trực tiếp: Hoa hồng HLV ca dạy</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.totalHlvCost)} đ</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${data.totalRevenue > 0 ? ((data.totalHlvCost / data.totalRevenue) * 100).toFixed(1) : 0}%</td>
+                    </tr>
+                    <tr style="font-weight: bold; background-color: #eef2ff;">
+                        <td style="padding: 8px; border: 1px solid #333;">(=) LỢI NHUẬN GỘP (Phần HBA giữ lại)</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.totalGrossProfit)} đ</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${data.totalRevenue > 0 ? ((data.totalGrossProfit / data.totalRevenue) * 100).toFixed(1) : 0}%</td>
+                    </tr>
+                    <tr style="font-weight: bold; background-color: #fff1f2;">
+                        <td style="padding: 8px; border: 1px solid #333;">2. CHI PHÍ CỐ ĐỊNH & VẬN HÀNH (Đã tick tính)</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.totalActiveExpense)} đ</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #333;">${data.totalRevenue > 0 ? ((data.totalActiveExpense / data.totalRevenue) * 100).toFixed(1) : 0}%</td>
+                    </tr>
+                    <tr style="font-size: 13px;">
+                        <td style="padding: 4px 8px 4px 25px; border: 1px solid #333;">• Tiền thuê mặt bằng / làn bơi</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.expenseByGroup.mat_bang)} đ</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;"></td>
+                    </tr>
+                    <tr style="font-size: 13px;">
+                        <td style="padding: 4px 8px 4px 25px; border: 1px solid #333;">• Lương nhân sự (Lễ tân, cứu hộ, tạp vụ)</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.expenseByGroup.nhan_su)} đ</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;"></td>
+                    </tr>
+                    <tr style="font-size: 13px;">
+                        <td style="padding: 4px 8px 4px 25px; border: 1px solid #333;">• Tiện ích điện, nước sạch, internet</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.expenseByGroup.van_hanh)} đ</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;"></td>
+                    </tr>
+                    <tr style="font-size: 13px;">
+                        <td style="padding: 4px 8px 4px 25px; border: 1px solid #333;">• Hóa chất xử lý nước hồ & bảo trì</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.expenseByGroup.hoa_chat)} đ</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;"></td>
+                    </tr>
+                    <tr style="font-size: 13px;">
+                        <td style="padding: 4px 8px 4px 25px; border: 1px solid #333;">• Marketing & Dụng cụ dạy bơi</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.expenseByGroup.marketing)} đ</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;"></td>
+                    </tr>
+                    <tr style="font-size: 13px;">
+                        <td style="padding: 4px 8px 4px 25px; border: 1px solid #333;">• Chi phí khác (Tùy biến)</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;">${formatCurrency(data.expenseByGroup.chi_phi_khac)} đ</td>
+                        <td style="padding: 4px 8px; text-align: right; border: 1px solid #333;"></td>
+                    </tr>
+                    <tr style="font-weight: bold; font-size: 16px; background-color: ${data.netProfit >= 0 ? '#ecfdf5' : '#fef2f2'}; border: 2px solid #000;">
+                        <td style="padding: 10px; border: 1px solid #333;">(=) LỢI NHUẬN RÒNG (EBITDA) - [${data.netProfit >= 0 ? 'LÃI' : 'LỖ'}]</td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #333;">${formatCurrency(data.netProfit)} đ</td>
+                        <td style="padding: 10px; text-align: right; border: 1px solid #333;">${data.profitMargin}%</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Điểm hòa vốn -->
+            <div style="background-color: #f8fafc; border: 1px dashed #64748b; padding: 10px; margin-bottom: 20px; font-size: 13px;">
+                <strong>Phân tích điểm hòa vốn kỳ này:</strong> Doanh thu hòa vốn cần đạt là <strong>${formatCurrency(data.breakEvenRevenue)} đ</strong> (tương ứng khoảng <strong>${data.breakEvenStudents} học viên</strong> đóng học phí bình quân).
+            </div>
+
+            <!-- Bảng kê chi tiết chi phí -->
+            <h4 style="margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase;">Chi tiết các khoản chi trong kỳ:</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 30px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2; border: 1px solid #ddd;">
+                        <th style="padding: 6px; border: 1px solid #ddd; width: 35px;">STT</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: left;">Khoản Chi</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: left;">Nhóm</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: right;">Số Tiền</th>
+                        <th style="padding: 6px; border: 1px solid #ddd; text-align: center;">Trạng Thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${expenseRowsHtml || '<tr><td colspan="5" style="text-align: center; padding: 10px;">Không có khoản chi</td></tr>'}
+                </tbody>
+            </table>
+
+            <!-- Chữ ký -->
+            <div style="display: flex; justify-content: space-between; text-align: center; font-size: 14px; margin-top: 40px;">
+                <div style="width: 30%;">
+                    <p style="font-weight: bold; margin: 0;">Người Lập Báo Cáo</p>
+                    <p style="font-style: italic; font-size: 12px; margin: 3px 0 60px 0;">(Ký và ghi rõ họ tên)</p>
+                </div>
+                <div style="width: 30%;">
+                    <p style="font-weight: bold; margin: 0;">Kế Toán Trưởng</p>
+                    <p style="font-style: italic; font-size: 12px; margin: 3px 0 60px 0;">(Ký và ghi rõ họ tên)</p>
+                </div>
+                <div style="width: 30%;">
+                    <p style="font-weight: bold; margin: 0;">Ban Quản Lý HBA Q6</p>
+                    <p style="font-style: italic; font-size: 12px; margin: 3px 0 60px 0;">(Duyệt và đóng dấu)</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    printSection.innerHTML = printHtml;
+    printSection.classList.remove('hidden');
+    document.body.classList.add('printing');
+    setTimeout(() => {
+        window.print();
+        document.body.classList.remove('printing');
+        printSection.classList.add('hidden');
+    }, 250);
+};
+
+// Xuất Excel Báo Cáo KQKD (2 Sheet: P&L và Sổ Chi Phí)
+const handleExportExcelKQKD = () => {
+    if (!currentKqkdSummaryData) {
+        showModal("Chưa có dữ liệu báo cáo để xuất Excel.", "Lỗi");
+        return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+        showModal("Thư viện Excel (XLSX) chưa sẵn sàng.", "Lỗi");
+        return;
+    }
+
+    const data = currentKqkdSummaryData;
+    const wb = XLSX.utils.book_new();
+
+    // SHEET 1: KET_QUA_KINH_DOANH
+    const pnlRows = [
+        ["TRUNG TÂM DẠY BƠI HBA - HỒ BƠI QUẬN 6"],
+        ["BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (P&L)"],
+        [`Kỳ hạch toán: ${data.periodLabel}`, "", `Ngày xuất: ${formatDateForDisplay(new Date())}`],
+        [""],
+        ["CHỈ TIÊU HẠCH TOÁN", "SỐ TIỀN (VNĐ)", "TỶ LỆ (%)", "GHI CHÚ"],
+        ["1. DOANH THU THUẦN TỪ HỌC PHÍ", data.totalRevenue, 1, `${data.studentCount} học viên mới`],
+        ["(-) Chi phí HLV (Hoa hồng ca dạy)", data.totalHlvCost, data.totalRevenue > 0 ? (data.totalHlvCost / data.totalRevenue) : 0, "Chi trả cho Huấn luyện viên"],
+        ["(=) LỢI NHUẬN GỘP (HBA Nhận)", data.totalGrossProfit, data.totalRevenue > 0 ? (data.totalGrossProfit / data.totalRevenue) : 0, "Phần trung tâm giữ lại"],
+        ["2. TỔNG CHI PHÍ CỐ ĐỊNH & KHÁC", data.totalActiveExpense, data.totalRevenue > 0 ? (data.totalActiveExpense / data.totalRevenue) : 0, `${data.activeExpenseCount} khoản chi đang tính`],
+        ["  • Mặt bằng & Thuê hồ bơi", data.expenseByGroup.mat_bang, data.totalRevenue > 0 ? (data.expenseByGroup.mat_bang / data.totalRevenue) : 0, ""],
+        ["  • Lương nhân sự (Lễ tân, cứu hộ, tạp vụ)", data.expenseByGroup.nhan_su, data.totalRevenue > 0 ? (data.expenseByGroup.nhan_su / data.totalRevenue) : 0, ""],
+        ["  • Tiện ích (Điện, nước, internet)", data.expenseByGroup.van_hanh, data.totalRevenue > 0 ? (data.expenseByGroup.van_hanh / data.totalRevenue) : 0, ""],
+        ["  • Hóa chất xử lý nước hồ & bảo trì", data.expenseByGroup.hoa_chat, data.totalRevenue > 0 ? (data.expenseByGroup.hoa_chat / data.totalRevenue) : 0, ""],
+        ["  • Marketing & Dụng cụ dạy bơi", data.expenseByGroup.marketing, data.totalRevenue > 0 ? (data.expenseByGroup.marketing / data.totalRevenue) : 0, ""],
+        ["  • Chi phí khác (Tùy biến)", data.expenseByGroup.chi_phi_khac, data.totalRevenue > 0 ? (data.expenseByGroup.chi_phi_khac / data.totalRevenue) : 0, ""],
+        ["(=) LỢI NHUẬN RÒNG (EBITDA)", data.netProfit, data.totalRevenue > 0 ? (data.netProfit / data.totalRevenue) : 0, data.netProfit >= 0 ? "LÃI" : "LỖ"],
+        [""],
+        ["PHÂN TÍCH ĐIỂM HÒA VỐN"],
+        ["Doanh thu hòa vốn cần đạt:", data.breakEvenRevenue, "", "Doanh thu tối thiểu trang trải định phí"],
+        ["Số học viên tối thiểu để hòa vốn:", data.breakEvenStudents, "", "Học viên"]
+    ];
+
+    const wsPnl = XLSX.utils.aoa_to_sheet(pnlRows);
+    wsPnl['!cols'] = [{ wch: 45 }, { wch: 20 }, { wch: 15 }, { wch: 35 }];
+    XLSX.utils.book_append_sheet(wb, wsPnl, "KetQuaKinhDoanh");
+
+    // SHEET 2: CHI_TIET_CHI_PHI
+    const expenseRows = [
+        ["DANH SÁCH CHI PHÍ CHI TIẾT TRONG KỲ"],
+        [`Kỳ hạch toán: ${data.periodLabel}`],
+        [""],
+        ["STT", "TÊN KHOẢN CHI", "NHÓM CHI PHÍ", "SỐ TIỀN (VNĐ)", "TÍNH VÀO KQKD", "NGÀY CHI", "GHI CHÚ"]
+    ];
+
+    data.filteredExpenses.forEach((cp, idx) => {
+        const isActive = cp.isTinhKQKD !== false;
+        const grp = EXPENSE_GROUPS[cp.nhomChiPhi] || EXPENSE_GROUPS.chi_phi_khac;
+        const ngayChiStr = cp.ngayChi ? formatDateForDisplay(cp.ngayChi) : (cp.thangNam || '');
+        expenseRows.push([
+            idx + 1,
+            cp.tenChiPhi,
+            grp.label,
+            Number(cp.soTien) || 0,
+            isActive ? "CÓ" : "KHÔNG",
+            ngayChiStr,
+            cp.ghiChu || ""
+        ]);
+    });
+
+    expenseRows.push(["", "TỔNG CỘNG TẤT CẢ:", "", data.filteredExpenses.reduce((s, c) => s + (Number(c.soTien) || 0), 0)]);
+    expenseRows.push(["", "TỔNG CHI PHÍ THỰC TÍNH KQKD:", "", data.totalActiveExpense]);
+
+    const wsExp = XLSX.utils.aoa_to_sheet(expenseRows);
+    wsExp['!cols'] = [{ wch: 6 }, { wch: 35 }, { wch: 25 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, wsExp, "ChiTietChiPhi");
+
+    // Tải file về máy
+    const cleanPeriod = data.periodLabel.replace(/[\/\\?%*:|"<>]/g, '_');
+    const fileName = `Bao_Cao_KQKD_HBA_Q6_${cleanPeriod}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+};
+
